@@ -1,0 +1,49 @@
+package endpoint
+
+import (
+	"context"
+
+	"github.com/go-kit/kit/endpoint"
+)
+
+{{ range .MethodNames }}
+type {{ . }}Request struct {
+    // TODO: create fields
+}
+
+type {{ . }}Response struct {
+	// TODO: create fields
+	Err string
+}
+
+{{ end }}
+
+type {{ .ServiceName }}Endpoints struct {
+{{ range .MethodNames }}
+	{{ . }}Endpoint endpoint.Endpoint
+{{ end }}
+}
+
+func Make{{ .ServiceName }}Endpoints(svc interface{}) {{ .ServiceName }}Endpoints {
+	return {{ .ServiceName }}Endpoints{
+{{ range .MethodNames }}
+		{{ . }}Endpoint: make{{ . }}Endpoint(svc),
+{{ end }}
+	}
+}
+
+{{ range .MethodNames }}
+func make{{ . }}Endpoint(svc interface{}) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		//req := request.({{ . }}Request)
+		//result, err := svc.{{ . }}(ctx)
+		//return {{ . }}Response{field: result.field}, nil
+
+		// TODO: write service call with request and transformation result to response
+
+		return nil, nil
+	}
+}
+
+{{ end }}
+
