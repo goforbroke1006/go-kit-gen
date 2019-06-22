@@ -1,0 +1,24 @@
+package model
+
+import (
+	"context"
+
+	"../{{ .ProtoFileRelDir }}"
+	"../endpoint"
+)
+
+{{ range .MethodNames }}
+func DecodeGRPC{{ . }}Request(_ context.Context, r interface{}) (interface{}, error) {
+	_ = r.(*pb.{{ . }}Request)
+	return endpoint.{{ . }}Request{}, nil
+}
+
+func EncodeGRPC{{ . }}Response(_ context.Context, r interface{}) (interface{}, error) {
+	resp := r.(endpoint.{{ . }}Response)
+	// TODO: write convert logic
+	return &pb.{{ . }}Response{
+		//FieldOne: resp.FieldOne,
+		Err:    resp.Err,
+	}, nil
+}
+{{ end }}

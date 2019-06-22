@@ -53,12 +53,34 @@ func main() {
 		command.Wait()
 	}
 
+	{
+		command = exec.Command("mkdir", (*workingDir)+"/model/")
+		command.Start()
+		command.Wait()
+	}
+
+	{
+		command = exec.Command("mkdir", (*workingDir)+"/transport/")
+		command.Start()
+		command.Wait()
+	}
+
 	endpointTmpl, err := template.ParseFiles((*workingDir) + "/../template/endpoint.tmpl")
 	if nil != err {
 		log.Fatal(err)
 	}
 
 	serviceTmpl, err := template.ParseFiles((*workingDir) + "/../template/service.tmpl")
+	if nil != err {
+		log.Fatal(err)
+	}
+
+	modelTmpl, err := template.ParseFiles((*workingDir) + "/../template/model.tmpl")
+	if nil != err {
+		log.Fatal(err)
+	}
+
+	transportTmpl, err := template.ParseFiles((*workingDir) + "/../template/transport.tmpl")
 	if nil != err {
 		log.Fatal(err)
 	}
@@ -82,14 +104,25 @@ func main() {
 		serviceName := strings.TrimSuffix(itf.Name.Name, "Server")
 		serviceNameLow := strings.ToLower(serviceName[0:1]) + serviceName[1:]
 
+		var protoFileRelDir string
+		{
+			protoFileRelDirParts := strings.Split(*protoFile, "/")
+			protoFileRelDirParts = protoFileRelDirParts[:len(protoFileRelDirParts)-1]
+			protoFileRelDir = strings.Join(protoFileRelDirParts, "/")
+		}
+
 		data := struct {
-			ServiceName    string
-			ServiceNameLow string
-			MethodNames    []string
+			ProtoPackageName string
+			ServiceName      string
+			ServiceNameLow   string
+			ProtoFileRelDir  string
+			MethodNames      []string
 		}{
-			ServiceName:    serviceName,
-			ServiceNameLow: serviceNameLow,
-			MethodNames:    methodNames,
+			ProtoPackageName: "pb",
+			ServiceName:      serviceName,
+			ServiceNameLow:   serviceNameLow,
+			ProtoFileRelDir:  protoFileRelDir,
+			MethodNames:      methodNames,
 		}
 
 		endpointFile, _ := os.Create((*workingDir) + "/endpoint/" + serviceNameLow + ".go")
@@ -100,6 +133,18 @@ func main() {
 
 		serviceFile, _ := os.Create((*workingDir) + "/service/" + serviceNameLow + ".go")
 		err = serviceTmpl.Execute(serviceFile, data)
+		if nil != err {
+			fmt.Println(err.Error())
+		}
+
+		modelFile, _ := os.Create((*workingDir) + "/model/" + serviceNameLow + ".go")
+		err = modelTmpl.Execute(modelFile, data)
+		if nil != err {
+			fmt.Println(err.Error())
+		}
+
+		transportFile, _ := os.Create((*workingDir) + "/transport/" + serviceNameLow + ".go")
+		err = transportTmpl.Execute(transportFile, data)
 		if nil != err {
 			fmt.Println(err.Error())
 		}

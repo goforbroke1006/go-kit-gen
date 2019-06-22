@@ -1,0 +1,39 @@
+package transport
+
+import (
+	"context"
+
+	grpcTransport "github.com/go-kit/kit/transport/grpc"
+
+	"../{{.ProtoFileRelDir}}"
+	"../endpoint"
+	"../model"
+)
+
+type grpc{{.ServiceName}}Server struct {
+{{ range .MethodNames }}
+	handle{{.}} grpcTransport.Handler
+{{ end }}
+}
+
+{{ range .MethodNames }}
+func (s grpc{{$.ServiceName}}Server) {{.}}(ctx context.Context, req *pb.{{ . }}Request) (*{{$.ProtoPackageName}}.{{.}}Response, error) {
+	_, resp, err := s.handle{{.}}.ServeGRPC(ctx, req)
+	if err != nil {
+		return nil, err
+	}
+	return resp.(*{{$.ProtoPackageName}}.{{.}}Response), nil
+}
+{{ end }}
+
+func NewGRPC{{$.ServiceName}}Server(_ context.Context, endpoint endpoint.{{$.ServiceName}}Endpoints) {{$.ProtoPackageName}}.{{$.ServiceName}}Server {
+	return &grpc{{$.ServiceName}}Server{
+{{ range .MethodNames }}
+		handle{{.}}: grpcTransport.NewServer(
+			endpoint.{{.}}Endpoint,
+			model.DecodeGRPC{{.}}Request,
+			model.EncodeGRPC{{.}}Response,
+		),
+{{ end }}
+	}
+}
