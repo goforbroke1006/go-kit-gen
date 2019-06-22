@@ -14,9 +14,10 @@ import (
 )
 
 var (
-	workingDir = flag.String("working-dir", "./", "Define project root dir")
-	protoPath  = flag.String("proto-path", "", "Services and messages blueprints *.proto file location")
-	protoFile  = flag.String("proto-file", "", "Services and messages blueprints *.proto file location")
+	workingDir  = flag.String("working-dir", "./", "Define project root dir")
+	protoPath   = flag.String("proto-path", "", "Services and messages blueprints *.proto file location")
+	protoFile   = flag.String("proto-file", "", "Services and messages blueprints *.proto file location")
+	serviceName = flag.String("service-name", "", "Service name")
 )
 
 func init() {
@@ -85,76 +86,104 @@ func main() {
 		log.Fatal(err)
 	}
 
-	interfaces := parseServerInterfaces(
-		"/home/goforbroke/go/src/github.com/goforbroke1006/go-kit-gen/debug-wd/pb/api/v1/fake-data-provider-service.pb.go",
+	interfaces := extractServerInterface(
+		(*workingDir)+"/"+strings.TrimSuffix(*protoFile, "proto")+"pb.go",
+		//"/home/goforbroke/go/src/github.com/goforbroke1006/go-kit-gen/debug-wd/pb/api/v1/fake-data-provider-service.pb.go",
+		*serviceName,
 	)
-	for _, itf := range interfaces {
-		//fmt.Println(itf.Name.Name)
-		var methodNames []string
-		methods := extractMethodsFromType(itf)
-		for _, f := range methods {
-			//fmt.Println("", ">", f.Names[0].Name)
+
+	//fmt.Println(itf.Name.Name)
+	var methodNames []string
+	methods := extractMethodsFromType(interfaces)
+	for _, f := range methods {
+		//fmt.Println("", ">", f.Names[0].Name)
+		if nil != err {
+			fmt.Println(err.Error())
+			continue
+		}
+		methodNames = append(methodNames, f.Names[0].Name)
+	}
+
+	serviceName := strings.TrimSuffix(interfaces.Name.Name, "Server")
+	serviceNameLow := strings.ToLower(serviceName[0:1]) + serviceName[1:]
+
+	var protoFileRelDir string
+	{
+		protoFileRelDirParts := strings.Split(*protoFile, "/")
+		protoFileRelDirParts = protoFileRelDirParts[:len(protoFileRelDirParts)-1]
+		protoFileRelDir = strings.Join(protoFileRelDirParts, "/")
+	}
+
+	data := struct {
+		ProtoPackageName string
+		ServiceName      string
+		ServiceNameLow   string
+		ProtoFileRelDir  string
+		MethodNames      []string
+	}{
+		ProtoPackageName: "pb", // FIXME: hardcode
+		ServiceName:      serviceName,
+		ServiceNameLow:   serviceNameLow,
+		ProtoFileRelDir:  protoFileRelDir,
+		MethodNames:      methodNames,
+	}
+
+	{
+		endpointFilename := (*workingDir) + "/endpoint/endpoint.go"
+		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
+			endpointFile, _ := os.Create(endpointFilename)
+			err = endpointTmpl.Execute(endpointFile, data)
 			if nil != err {
 				fmt.Println(err.Error())
-				continue
 			}
-			methodNames = append(methodNames, f.Names[0].Name)
+		} else {
+			fmt.Println("File", endpointFilename, "already exists! Please edit it manually!")
 		}
+	}
 
-		serviceName := strings.TrimSuffix(itf.Name.Name, "Server")
-		serviceNameLow := strings.ToLower(serviceName[0:1]) + serviceName[1:]
-
-		var protoFileRelDir string
-		{
-			protoFileRelDirParts := strings.Split(*protoFile, "/")
-			protoFileRelDirParts = protoFileRelDirParts[:len(protoFileRelDirParts)-1]
-			protoFileRelDir = strings.Join(protoFileRelDirParts, "/")
+	{
+		serviceFilename := (*workingDir) + "/service/service.go"
+		if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
+			serviceFile, _ := os.Create(serviceFilename)
+			err = serviceTmpl.Execute(serviceFile, data)
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+		} else {
+			fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
 		}
+	}
 
-		data := struct {
-			ProtoPackageName string
-			ServiceName      string
-			ServiceNameLow   string
-			ProtoFileRelDir  string
-			MethodNames      []string
-		}{
-			ProtoPackageName: "pb",
-			ServiceName:      serviceName,
-			ServiceNameLow:   serviceNameLow,
-			ProtoFileRelDir:  protoFileRelDir,
-			MethodNames:      methodNames,
+	{
+		modelFilename := (*workingDir) + "/model/model.go"
+		if _, err := os.Stat(modelFilename); os.IsNotExist(err) {
+			modelFile, _ := os.Create(modelFilename)
+			err = modelTmpl.Execute(modelFile, data)
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+		} else {
+			fmt.Println("File", modelFilename, "already exists! Please edit it manually!")
 		}
+	}
 
-		endpointFile, _ := os.Create((*workingDir) + "/endpoint/" + serviceNameLow + ".go")
-		err = endpointTmpl.Execute(endpointFile, data)
-		if nil != err {
-			fmt.Println(err.Error())
+	{
+		transportFilename := (*workingDir) + "/transport/transport.go"
+		if _, err := os.Stat(transportFilename); os.IsNotExist(err) {
+			transportFile, _ := os.Create(transportFilename)
+			err = transportTmpl.Execute(transportFile, data)
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+		} else {
+			fmt.Println("File", transportFilename, "already exists! Please edit it manually!")
 		}
-
-		serviceFile, _ := os.Create((*workingDir) + "/service/" + serviceNameLow + ".go")
-		err = serviceTmpl.Execute(serviceFile, data)
-		if nil != err {
-			fmt.Println(err.Error())
-		}
-
-		modelFile, _ := os.Create((*workingDir) + "/model/" + serviceNameLow + ".go")
-		err = modelTmpl.Execute(modelFile, data)
-		if nil != err {
-			fmt.Println(err.Error())
-		}
-
-		transportFile, _ := os.Create((*workingDir) + "/transport/" + serviceNameLow + ".go")
-		err = transportTmpl.Execute(transportFile, data)
-		if nil != err {
-			fmt.Println(err.Error())
-		}
-
 	}
 
 }
 
-func parseServerInterfaces(filename string) []*ast.TypeSpec {
-	var result []*ast.TypeSpec
+func extractServerInterface(filename, serviceName string) *ast.TypeSpec {
+	//var result []*ast.TypeSpec
 
 	fs := token.NewFileSet()
 	fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
@@ -172,26 +201,30 @@ func parseServerInterfaces(filename string) []*ast.TypeSpec {
 					if strings.HasPrefix(typeSpec.Name.Name, "Unimplemented") {
 						continue
 					}
-					if !strings.HasSuffix(typeSpec.Name.Name, "Server") {
-						continue
+					//if !strings.HasSuffix(typeSpec.Name.Name, "Server") {
+					//	continue
+					//}
+
+					if typeSpec.Name.Name == serviceName+"Server" {
+						return typeSpec
 					}
 
-					{
-						s := typeSpec.Name.Name[0:1]
-						upper := strings.ToUpper(s)
-						if s != upper {
-							continue
-						}
-					}
-
-					result = append(result, typeSpec)
+					//{
+					//	s := typeSpec.Name.Name[0:1]
+					//	upper := strings.ToUpper(s)
+					//	if s != upper {
+					//		continue
+					//	}
+					//}
+					//
+					//result = append(result, typeSpec)
 				}
 			}
 			continue
 		}
 	}
 
-	return result
+	return nil
 }
 
 func extractMethodsFromType(t *ast.TypeSpec) []*ast.Field {
