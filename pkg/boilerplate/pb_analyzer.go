@@ -36,3 +36,7 @@ func ExtractServerInterface(filename, serviceName string) *ast.TypeSpec {
 
 	return nil
 }
+
+func ExtractMethodsFromType(t *ast.TypeSpec) []*ast.Field {
+	return t.Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods.List
+}
