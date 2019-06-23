@@ -63,7 +63,7 @@ func FixMissingReqRespForEndpoint(filename string, expectedMethods []string) {
 
 func FixMissingEndpoints(filename, serviceName string, expectedMethods []string) {
 	fs := token.NewFileSet()
-	fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
+	fileGo, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
 	if nil != err {
 		log.Fatal(err)
 	}
@@ -123,7 +123,9 @@ func FixMissingEndpoints(filename, serviceName string, expectedMethods []string)
 	if _, err = out.Seek(0, 0); nil != err {
 		log.Fatal(err)
 	}
-	err = printer.Fprint(out, fs, fileGo)
+	printCfg := printer.Config{Mode: printer.RawFormat}
+	//err = printer.Fprint(out, fs, fileGo)
+	err = printCfg.Fprint(out, fs, fileGo)
 	if nil != err {
 		log.Fatal(err)
 	}

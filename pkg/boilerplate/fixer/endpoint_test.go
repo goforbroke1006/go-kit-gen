@@ -15,6 +15,8 @@ import (
 	"github.com/go-kit/kit/endpoint"
 )
 
+// TODO:
+
 type SomeAwesomeHubEndpoints struct {
 	MethodOneEndpoint endpoint.Endpoint
 	MethodTwoEndpoint endpoint.Endpoint
@@ -38,6 +40,10 @@ type SomeAwesomeHubEndpoints struct {
 	result, err := ioutil.ReadFile(filename)
 	if nil != err {
 		t.Fatal(err)
+	}
+
+	if !strings.Contains(string(result), "TODO:") {
+		t.Fatal("Missing comments")
 	}
 
 	if !strings.Contains(string(result), "SayHelloEndpoint") {
