@@ -123,9 +123,8 @@ func FixMissingEndpoints(filename, serviceName string, expectedMethods []string)
 	if _, err = out.Seek(0, 0); nil != err {
 		log.Fatal(err)
 	}
-	printCfg := printer.Config{Mode: printer.RawFormat}
-	//err = printer.Fprint(out, fs, fileGo)
-	err = printCfg.Fprint(out, fs, fileGo)
+
+	err = printer.Fprint(out, fs, fileGo)
 	if nil != err {
 		log.Fatal(err)
 	}
