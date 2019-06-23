@@ -21,6 +21,14 @@ type SomeAwesomeHubEndpoints struct {
 	MethodOneEndpoint endpoint.Endpoint
 	MethodTwoEndpoint endpoint.Endpoint
 	MethodThreeEndpoint endpoint.Endpoint
+}
+
+func MakeFakeDataProviderEndpoints(svc interface{}) FakeDataProviderEndpoints {
+	return FakeDataProviderEndpoints{
+		MethodOneEndpoint: makeMethodOneEndpoint(svc),
+		MethodTwoEndpoint: makeMethodTwoEndpoint(svc),
+		MethodThreeEndpoint: makeMethodThreeEndpoint(svc),
+	}
 }`
 	filename := "testdata/TestFixMissingEndpoints__endpoint.tmp"
 	err := ioutil.WriteFile(filename, []byte(initContent), os.ModePerm)
@@ -46,7 +54,11 @@ type SomeAwesomeHubEndpoints struct {
 		t.Fatal("Missing comments")
 	}
 
-	if !strings.Contains(string(result), "SayHelloEndpoint") {
-		t.Fatal("Missing required endpoint property")
+	if !strings.Contains(string(result), "SayHelloEndpoint	endpoint.Endpoint") {
+		t.Fatal("Missing required endpoint property declaration")
+	}
+
+	if !strings.Contains(string(result), "SayHelloEndpoint:") {
+		t.Fatal("Missing required endpoint property initialization")
 	}
 }

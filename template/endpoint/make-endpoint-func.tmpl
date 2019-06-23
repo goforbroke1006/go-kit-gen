@@ -1,0 +1,12 @@
+
+func make{{ .MethodName }}Endpoint(svc interface{}) endpoint.Endpoint {
+	return func(ctx context.Context, request interface{}) (response interface{}, err error) {
+		//req := request.({{ .MethodName }}Request)
+		//result, err := svc.{{ .MethodName }}(ctx)
+		//return {{ .MethodName }}Response{field: result.field}, nil
+
+		// TODO: write service call with request and transformation result to response
+
+		return nil, nil
+	}
+}
