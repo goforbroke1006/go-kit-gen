@@ -138,6 +138,7 @@ func main() {
 			}
 		} else {
 			fmt.Println("File", endpointFilename, "already exists! Please edit it manually!")
+			fmt.Println(findMissingReqRespForEndpoint(endpointFilename, methodNames))
 		}
 	}
 
@@ -183,8 +184,6 @@ func main() {
 }
 
 func extractServerInterface(filename, serviceName string) *ast.TypeSpec {
-	//var result []*ast.TypeSpec
-
 	fs := token.NewFileSet()
 	fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
 	if nil != err {
@@ -201,23 +200,9 @@ func extractServerInterface(filename, serviceName string) *ast.TypeSpec {
 					if strings.HasPrefix(typeSpec.Name.Name, "Unimplemented") {
 						continue
 					}
-					//if !strings.HasSuffix(typeSpec.Name.Name, "Server") {
-					//	continue
-					//}
-
 					if typeSpec.Name.Name == serviceName+"Server" {
 						return typeSpec
 					}
-
-					//{
-					//	s := typeSpec.Name.Name[0:1]
-					//	upper := strings.ToUpper(s)
-					//	if s != upper {
-					//		continue
-					//	}
-					//}
-					//
-					//result = append(result, typeSpec)
 				}
 			}
 			continue
@@ -229,4 +214,37 @@ func extractServerInterface(filename, serviceName string) *ast.TypeSpec {
 
 func extractMethodsFromType(t *ast.TypeSpec) []*ast.Field {
 	return t.Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods.List
+}
+
+func findMissingReqRespForEndpoint(filename string, expectedMethods []string) []string {
+	var res []string
+
+	fs := token.NewFileSet()
+	fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
+	if nil != err {
+		log.Fatal(err)
+	}
+
+	for _, m := range expectedMethods {
+		find := false
+		for _, d := range fileGo.Decls {
+			if gen, ok := d.(*ast.GenDecl); ok {
+				if len(gen.Specs) > 0 {
+					if typeSpec, ok := gen.Specs[0].(*ast.TypeSpec); ok {
+						if "type" != gen.Tok.String() {
+							continue
+						}
+						if m+"Request" == typeSpec.Name.Name || m+"Response" == typeSpec.Name.Name {
+							find = true
+							break
+						}
+					}
+				}
+			}
+		}
+		if !find {
+			res = append(res, m)
+		}
+	}
+	return res
 }
