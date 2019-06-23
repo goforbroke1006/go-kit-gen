@@ -3,10 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate"
 	"go/ast"
 	"go/parser"
 	"go/token"
-	"html/template"
 	//"io/ioutil"
 	"log"
 	"os"
@@ -27,10 +27,21 @@ func init() {
 
 func main() {
 
+	var workingDirPath string
+	if strings.HasPrefix(*workingDir, "/") {
+		workingDirPath = *workingDir
+	} else {
+		appWorkingDir, err := os.Getwd()
+		if nil != err {
+			log.Fatal(err)
+		}
+		workingDirPath = appWorkingDir + "/" + *workingDir
+	}
+
 	command := exec.Command(
 		"protoc",
 		fmt.Sprintf("--proto_path=%s", *protoPath),
-		fmt.Sprintf("--go_out=plugins=grpc:%s", *workingDir),
+		fmt.Sprintf("--go_out=plugins=grpc:%s", workingDirPath),
 		*protoFile,
 	)
 	err := command.Start()
@@ -43,65 +54,15 @@ func main() {
 		log.Printf("Command finished with error: %v", err)
 	}
 
-	{
-		command = exec.Command("mkdir", (*workingDir)+"/endpoint/")
-		command.Start()
-		command.Wait()
-	}
+	boilerplate.InitProjectDirs(workingDirPath)
 
-	{
-		command = exec.Command("mkdir", (*workingDir)+"/service/")
-		command.Start()
-		command.Wait()
-	}
-
-	{
-		command = exec.Command("mkdir", (*workingDir)+"/model/")
-		command.Start()
-		command.Wait()
-	}
-
-	{
-		command = exec.Command("mkdir", (*workingDir)+"/transport/")
-		command.Start()
-		command.Wait()
-	}
-
-	endpointTmpl, err := template.ParseFiles((*workingDir) + "/../template/endpoint.tmpl")
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	serviceTmpl, err := template.ParseFiles((*workingDir) + "/../template/service.tmpl")
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	modelTmpl, err := template.ParseFiles((*workingDir) + "/../template/model.tmpl")
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	transportTmpl, err := template.ParseFiles((*workingDir) + "/../template/transport.tmpl")
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	interfaces := extractServerInterface(
-		(*workingDir)+"/"+strings.TrimSuffix(*protoFile, "proto")+"pb.go",
-		//"/home/goforbroke/go/src/github.com/goforbroke1006/go-kit-gen/debug-wd/pb/api/v1/fake-data-provider-service.pb.go",
-		*serviceName,
-	)
+	protoGenFilename := workingDirPath + "/" + strings.TrimSuffix(*protoFile, "proto") + "pb.go"
+	interfaces := boilerplate.ExtractServerInterface(protoGenFilename, *serviceName)
 
 	//fmt.Println(itf.Name.Name)
 	var methodNames []string
 	methods := extractMethodsFromType(interfaces)
 	for _, f := range methods {
-		//fmt.Println("", ">", f.Names[0].Name)
-		if nil != err {
-			fmt.Println(err.Error())
-			continue
-		}
 		methodNames = append(methodNames, f.Names[0].Name)
 	}
 
@@ -132,11 +93,7 @@ func main() {
 	{
 		endpointFilename := (*workingDir) + "/endpoint/endpoint.go"
 		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
-			endpointFile, _ := os.Create(endpointFilename)
-			err = endpointTmpl.Execute(endpointFile, data)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+			boilerplate.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
 		} else {
 			//fmt.Println("File", endpointFilename, "already exists! Please edit it manually!")
 			//fmt.Println(findMissingReqRespForEndpoint(endpointFilename, methodNames))
@@ -156,73 +113,32 @@ func main() {
 	}
 
 	{
-		serviceFilename := (*workingDir) + "/service/service.go"
+		serviceFilename := workingDirPath + "/service/service.go"
 		if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
-			serviceFile, _ := os.Create(serviceFilename)
-			err = serviceTmpl.Execute(serviceFile, data)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+			boilerplate.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
 		} else {
 			fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
 		}
 	}
 
 	{
-		modelFilename := (*workingDir) + "/model/model.go"
+		modelFilename := workingDirPath + "/model/model.go"
 		if _, err := os.Stat(modelFilename); os.IsNotExist(err) {
-			modelFile, _ := os.Create(modelFilename)
-			err = modelTmpl.Execute(modelFile, data)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+			boilerplate.CreateNewFromTemplate(modelFilename, "template/model.tmpl", data)
 		} else {
 			fmt.Println("File", modelFilename, "already exists! Please edit it manually!")
 		}
 	}
 
 	{
-		transportFilename := (*workingDir) + "/transport/transport.go"
+		transportFilename := workingDirPath + "/transport/transport.go"
 		if _, err := os.Stat(transportFilename); os.IsNotExist(err) {
-			transportFile, _ := os.Create(transportFilename)
-			err = transportTmpl.Execute(transportFile, data)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+			boilerplate.CreateNewFromTemplate(transportFilename, "template/transport.tmpl", data)
 		} else {
 			fmt.Println("File", transportFilename, "already exists! Please edit it manually!")
 		}
 	}
 
-}
-
-func extractServerInterface(filename, serviceName string) *ast.TypeSpec {
-	fs := token.NewFileSet()
-	fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	for _, d := range fileGo.Decls {
-		if gen, ok := d.(*ast.GenDecl); ok {
-			if len(gen.Specs) > 0 {
-				if typeSpec, ok := gen.Specs[0].(*ast.TypeSpec); ok {
-					if "type" != gen.Tok.String() {
-						continue
-					}
-					if strings.HasPrefix(typeSpec.Name.Name, "Unimplemented") {
-						continue
-					}
-					if typeSpec.Name.Name == serviceName+"Server" {
-						return typeSpec
-					}
-				}
-			}
-			continue
-		}
-	}
-
-	return nil
 }
 
 func extractMethodsFromType(t *ast.TypeSpec) []*ast.Field {
