@@ -7,6 +7,7 @@ import (
 	"go/parser"
 	"go/token"
 	"html/template"
+	//"io/ioutil"
 	"log"
 	"os"
 	"os/exec"
@@ -137,8 +138,20 @@ func main() {
 				fmt.Println(err.Error())
 			}
 		} else {
-			fmt.Println("File", endpointFilename, "already exists! Please edit it manually!")
-			fmt.Println(findMissingReqRespForEndpoint(endpointFilename, methodNames))
+			//fmt.Println("File", endpointFilename, "already exists! Please edit it manually!")
+			//fmt.Println(findMissingReqRespForEndpoint(endpointFilename, methodNames))
+
+			f, err := os.OpenFile(endpointFilename, os.O_APPEND|os.O_WRONLY, 0644)
+			if nil != err {
+				log.Fatal(err)
+			}
+			for _, typeName := range findMissingReqRespForEndpoint(endpointFilename, methodNames) {
+				_, err := f.WriteString("type " + typeName + " struct {\n    // TODO: \n}\n")
+				if nil != err {
+					fmt.Println(err)
+				}
+			}
+			fixMissingEndpoints(endpointFilename, serviceName, methodNames)
 		}
 	}
 
@@ -226,7 +239,8 @@ func findMissingReqRespForEndpoint(filename string, expectedMethods []string) []
 	}
 
 	for _, m := range expectedMethods {
-		find := false
+		findReq := false
+		findRes := false
 		for _, d := range fileGo.Decls {
 			if gen, ok := d.(*ast.GenDecl); ok {
 				if len(gen.Specs) > 0 {
@@ -234,17 +248,69 @@ func findMissingReqRespForEndpoint(filename string, expectedMethods []string) []
 						if "type" != gen.Tok.String() {
 							continue
 						}
-						if m+"Request" == typeSpec.Name.Name || m+"Response" == typeSpec.Name.Name {
-							find = true
-							break
+						if m+"Request" == typeSpec.Name.Name {
+							findReq = true
+							continue
+						}
+						if m+"Response" == typeSpec.Name.Name {
+							findRes = true
+							continue
 						}
 					}
 				}
 			}
 		}
-		if !find {
-			res = append(res, m)
+		if !findReq {
+			res = append(res, m+"Request")
+		}
+		if !findRes {
+			res = append(res, m+"Response")
 		}
 	}
 	return res
+}
+
+func fixMissingEndpoints(filename, serviceName string, expectedMethods []string) {
+	fs := token.NewFileSet()
+	fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
+	if nil != err {
+		log.Fatal(err)
+	}
+
+	var endpointsStruct *ast.GenDecl
+	for _, d := range fileGo.Decls {
+		if gen, ok := d.(*ast.GenDecl); ok {
+			if len(gen.Specs) > 0 {
+				if typeSpec, ok := gen.Specs[0].(*ast.TypeSpec); ok {
+					if "type" != gen.Tok.String() {
+						continue
+					}
+					if serviceName+"Endpoints" == typeSpec.Name.Name {
+						endpointsStruct = gen
+						continue
+					}
+				}
+			}
+		}
+	}
+
+	if nil == endpointsStruct {
+		return
+	}
+
+	//for _, m := range expectedMethods {
+	//	exists := false
+	//	for _, field := range endpointsStruct.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType).Fields.List {
+	//		if m+"Endpoint" == field.Names[0].Name {
+	//			exists = true
+	//			break
+	//		}
+	//	}
+	//
+	//	if !exists {
+	//		fs.
+	//		endpointsStruct.Rparen
+	//	}
+	//}
+
 }
