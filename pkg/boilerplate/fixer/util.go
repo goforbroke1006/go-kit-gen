@@ -1,0 +1,27 @@
+package fixer
+
+import (
+	"go/ast"
+	"go/printer"
+	"go/token"
+	"log"
+	"os"
+)
+
+func writeSourceFile(filename string, file *ast.File, fs *token.FileSet) {
+	out, err := os.OpenFile(filename, os.O_RDWR, 066)
+	if nil != err {
+		log.Fatal(err)
+	}
+	if err = out.Truncate(0); nil != err {
+		log.Fatal(err)
+	}
+	if _, err = out.Seek(0, 0); nil != err {
+		log.Fatal(err)
+	}
+
+	err = printer.Fprint(out, fs, file)
+	if nil != err {
+		log.Fatal(err)
+	}
+}

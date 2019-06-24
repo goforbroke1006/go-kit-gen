@@ -1,0 +1,22 @@
+package endpoint
+
+import (
+	"context"
+	"github.com/go-kit/kit/endpoint"
+)
+
+// TODO:
+
+type SomeAwesomeHubEndpoints struct {
+	MethodOneEndpoint endpoint.Endpoint
+	MethodTwoEndpoint endpoint.Endpoint
+	MethodThreeEndpoint endpoint.Endpoint
+}
+
+func MakeSomeAwesomeHubEndpoints(svc interface{}) SomeAwesomeHubEndpoints {
+	return SomeAwesomeHubEndpoints {
+		MethodOneEndpoint: makeMethodOneEndpoint(svc),
+		MethodTwoEndpoint: makeMethodTwoEndpoint(svc),
+		MethodThreeEndpoint: makeMethodThreeEndpoint(svc),
+	}
+}
