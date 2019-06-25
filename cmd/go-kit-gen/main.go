@@ -25,6 +25,8 @@ func init() {
 
 func main() {
 
+	// TODO: validate args/opts
+
 	var workingDirPath string
 	if strings.HasPrefix(*workingDir, "/") {
 		workingDirPath = *workingDir
@@ -34,6 +36,21 @@ func main() {
 			log.Fatal(err)
 		}
 		workingDirPath = appWorkingDir + "/" + *workingDir
+	}
+
+	if len(*protoPath) == 0 {
+		dir, err := os.Getwd()
+		if nil != err {
+			log.Fatal(err)
+		}
+		*protoPath = dir
+	}
+
+	if len(*protoFile) == 0 {
+		log.Fatal("--proto-file is required")
+	}
+	if len(*serviceName) == 0 {
+		log.Fatal("--service-name is required")
 	}
 
 	command := exec.Command(

@@ -97,7 +97,12 @@ func (ef EndpointFixer) addMissedResponseModels() {
 func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
 	fs, file := fixer.OpenGolangSourceFile(ef.filename)
 
-	endpointsStructure := source.FindStructDeclByName(file, naming.GetEndpointsStructName(ef.serviceName))
+	endpointsStructName := naming.GetEndpointsStructName(ef.serviceName)
+	endpointsStructure := source.FindStructDeclByName(file, endpointsStructName)
+	if nil == endpointsStructure {
+		log.Println("Cant find endpoint struct", endpointsStructName)
+		return
+	}
 
 	propBuilder := source.NewStructBuilder(endpointsStructure)
 
@@ -127,9 +132,10 @@ func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
 
 func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 	fs, file := fixer.OpenGolangSourceFile(ef.filename)
-	funcDecl := source.FindFuncDeclByName(file, naming.GetMakeEndpointsFuncName(ef.serviceName))
+	endpointsFuncName := naming.GetMakeEndpointsFuncName(ef.serviceName)
+	funcDecl := source.FindFuncDeclByName(file, endpointsFuncName)
 	if nil == funcDecl {
-		log.Println("Can't find make endpoints func")
+		log.Println("Can't find make endpoints func", endpointsFuncName)
 		return
 	}
 
