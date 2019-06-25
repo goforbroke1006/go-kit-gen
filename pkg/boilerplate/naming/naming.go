@@ -1,5 +1,9 @@
 package naming
 
+func GetServiceInterfaceName(serviceName string) string {
+	return serviceName + "Service"
+}
+
 func GetEndpointRequestStructName(actionName string) string {
 	return actionName + "Request"
 }

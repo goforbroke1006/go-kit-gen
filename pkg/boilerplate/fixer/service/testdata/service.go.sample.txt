@@ -1,0 +1,27 @@
+package service
+
+import (
+	"context"
+)
+
+type SomeAwesomeHubService interface {
+	MethodOne(ctx context.Context) (interface{}, error)
+	MethodTwo(ctx context.Context) (interface{}, error)
+}
+
+type someAwesomeHubService struct {
+}
+
+func (svc someAwesomeHubService) MethodOne(ctx context.Context) (interface{}, error) {
+	// TODO: implement me
+    return nil, nil
+}
+
+func (svc someAwesomeHubService) MethodTwo(ctx context.Context) (interface{}, error) {
+	// TODO: implement me
+	return nil, nil
+}
+
+func NewSomeAwesomeHubService() FakeDataService {
+	return fakeDataService{}
+}

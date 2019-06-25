@@ -1,4 +1,4 @@
-package fixer
+package endpoint
 
 import (
 	"io/ioutil"
@@ -10,27 +10,40 @@ import (
 
 var ef *EndpointFixer
 
+const endpointUnfinishedSampleFilename = "testdata/endpoint.go.sample.txt"
+
+func recreateTestSourceFile(sampleFilename, filename string) {
+	initContent, err := ioutil.ReadFile(sampleFilename)
+	if nil != err {
+		log.Fatal(err)
+	}
+
+	err = ioutil.WriteFile(filename, []byte(initContent), os.ModePerm)
+	if nil != err {
+		log.Fatal(err)
+	}
+}
+
 func TestMain(m *testing.M) {
-	ef = &EndpointFixer{
-		filename:    "testdata/result.tmp",
-		serviceName: "SomeAwesomeHub",
-		serviceActions: []string{
-			"MethodOne",
-			"MethodTwo",
-			"MethodThree",
-			"SayHello",
-		},
-		templatesRelDir: "../../../",
+
+	const templatesDirRelateToTestDir = "../../../../"
+	const testServiceName = "SomeAwesomeHub"
+	testServiceActions := []string{
+		"MethodOne",
+		"MethodTwo",
+		"MethodThree",
+		"SayHello",
 	}
 
-	initContent, err := ioutil.ReadFile("testdata/endpoint.go.sample.txt")
-	if nil != err {
-		log.Fatal(err)
-	}
-
-	err = ioutil.WriteFile(ef.filename, []byte(initContent), os.ModePerm)
-	if nil != err {
-		log.Fatal(err)
+	{
+		filename := "testdata/endpoint-result.tmp"
+		ef = &EndpointFixer{
+			filename:        filename,
+			serviceName:     testServiceName,
+			serviceActions:  testServiceActions,
+			templatesRelDir: templatesDirRelateToTestDir,
+		}
+		recreateTestSourceFile(endpointUnfinishedSampleFilename, filename)
 	}
 
 	os.Exit(m.Run())

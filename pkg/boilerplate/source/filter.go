@@ -31,3 +31,18 @@ func FindStructDeclByName(file *ast.File, name string) *ast.GenDecl {
 	}
 	return nil
 }
+
+func FindInterfaceByName(file *ast.File, name string) *ast.GenDecl {
+	for _, d := range file.Decls {
+		switch d.(type) {
+		case *ast.GenDecl:
+			if "type" != d.(*ast.GenDecl).Tok.String() {
+				continue
+			}
+			if name == d.(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Name.Name {
+				return d.(*ast.GenDecl)
+			}
+		}
+	}
+	return nil
+}

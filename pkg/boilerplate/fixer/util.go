@@ -9,7 +9,7 @@ import (
 	"os"
 )
 
-func openGolangSourceFile(filename string) (*token.FileSet, *ast.File) {
+func OpenGolangSourceFile(filename string) (*token.FileSet, *ast.File) {
 	fs := token.NewFileSet()
 	file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
 	if nil != err {
@@ -18,7 +18,7 @@ func openGolangSourceFile(filename string) (*token.FileSet, *ast.File) {
 	return fs, file
 }
 
-func writeSourceFile(filename string, file *ast.File, fs *token.FileSet) {
+func WriteSourceFile(filename string, file *ast.File, fs *token.FileSet) {
 	out, err := os.OpenFile(filename, os.O_RDWR, 066)
 	if nil != err {
 		log.Fatal(err)

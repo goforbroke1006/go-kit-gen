@@ -4,7 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/endpoint"
 	"log"
 	"os"
 	"os/exec"
@@ -88,21 +88,21 @@ func main() {
 	}
 
 	{
-		endpointFilename := (*workingDir) + "/endpoint/endpoint.go"
-		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
-			boilerplate.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
-		} else {
-			endpointFixer := fixer.NewEndpointFixer(endpointFilename, *serviceName, methodNames)
-			endpointFixer.Fix()
-		}
-	}
-
-	{
 		serviceFilename := workingDirPath + "/service/service.go"
 		if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
 			boilerplate.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
 		} else {
 			fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
+		}
+	}
+
+	{
+		endpointFilename := (*workingDir) + "/endpoint/endpoint.go"
+		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
+			boilerplate.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
+		} else {
+			endpointFixer := endpoint.NewEndpointFixer(endpointFilename, *serviceName, methodNames)
+			endpointFixer.Fix()
 		}
 	}
 
