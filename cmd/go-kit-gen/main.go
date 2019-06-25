@@ -92,8 +92,8 @@ func main() {
 		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
 			boilerplate.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
 		} else {
-			fixer.FixMissingReqRespForEndpoint(endpointFilename, methodNames)
-			fixer.FixMissingEndpoints(endpointFilename, *serviceName, methodNames)
+			endpointFixer := fixer.NewEndpointFixer(endpointFilename, *serviceName, methodNames)
+			endpointFixer.Fix()
 		}
 	}
 

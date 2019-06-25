@@ -2,11 +2,21 @@ package fixer
 
 import (
 	"go/ast"
+	"go/parser"
 	"go/printer"
 	"go/token"
 	"log"
 	"os"
 )
+
+func openGolangSourceFile(filename string) (*token.FileSet, *ast.File) {
+	fs := token.NewFileSet()
+	file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
+	if nil != err {
+		log.Fatal(err)
+	}
+	return fs, file
+}
 
 func writeSourceFile(filename string, file *ast.File, fs *token.FileSet) {
 	out, err := os.OpenFile(filename, os.O_RDWR, 066)
