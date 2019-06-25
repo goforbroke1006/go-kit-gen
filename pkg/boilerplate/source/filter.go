@@ -32,6 +32,22 @@ func FindStructDeclByName(file *ast.File, name string) *ast.GenDecl {
 	return nil
 }
 
+func FindStructMethods(file *ast.File, structName string) []*ast.FuncDecl {
+	var result []*ast.FuncDecl
+	for _, decl := range file.Decls {
+		switch decl.(type) {
+		case *ast.FuncDecl:
+			if nil == decl.(*ast.FuncDecl).Recv {
+				continue
+			}
+			if structName == decl.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
+				result = append(result, decl.(*ast.FuncDecl))
+			}
+		}
+	}
+	return result
+}
+
 func FindInterfaceByName(file *ast.File, name string) *ast.GenDecl {
 	for _, d := range file.Decls {
 		switch d.(type) {

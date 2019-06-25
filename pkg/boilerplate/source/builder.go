@@ -22,6 +22,10 @@ func (sb *StructBuilder) StructAddProperty(prop *ast.Field) {
 	sb.decl.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType).Fields.List = fields
 }
 
+func (sb StructBuilder) GetMethods() []interface{} {
+	return nil
+}
+
 func NewInterfaceBuilder(decl *ast.GenDecl) *InterfaceBuilder {
 	return &InterfaceBuilder{
 		decl: decl,

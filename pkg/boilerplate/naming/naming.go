@@ -1,7 +1,13 @@
 package naming
 
+import "strings"
+
 func GetServiceInterfaceName(serviceName string) string {
 	return serviceName + "Service"
+}
+
+func GetServicePrivateImplStructName(serviceName string) string {
+	return strings.ToLower(serviceName[0:1]) + serviceName[1:] + "Service"
 }
 
 func GetEndpointRequestStructName(actionName string) string {
