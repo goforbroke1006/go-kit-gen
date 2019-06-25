@@ -1,5 +1,7 @@
 # go-kit-gen
 
+Tool for generating gokit-based microservice project structure with proto-3 file.
+
 ### CLI
 
 ```bash
