@@ -48,9 +48,7 @@ func (sf ServiceFixer) addMissedMethodSignaturesInServiceInterface() {
 				Names: []*ast.Ident{
 					{
 						Name: action,
-						Obj: &ast.Object{
-							Kind: ast.Fun, Name: action,
-						},
+						Obj:  &ast.Object{Kind: ast.Fun, Name: action},
 					},
 				},
 				Type: &ast.FuncType{
@@ -81,7 +79,7 @@ func (sf ServiceFixer) addMissedMethodSignaturesInServiceInterface() {
 					},
 				},
 			}
-			// TODO:
+
 			ib.AppendMethod(missedMethodDecl)
 		}
 	}
