@@ -36,11 +36,61 @@ func (ef EndpointFixer) Fix() {
 }
 
 func (ef EndpointFixer) addMissedRequestModels() {
-	// TODO:
+	fs, file := openGolangSourceFile(ef.filename)
+
+	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/empty-struct.tmpl"))
+
+	for _, action := range ef.serviceActions {
+		structName := naming.GetEndpointRequestStructName(action)
+		reqModelDecl := source.FindStructDeclByName(file, structName)
+		if nil == reqModelDecl {
+			filename := action + ".tmp"
+			fileTmp, err := os.Create(filename)
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+			err = tmpl.Execute(fileTmp, struct{ Name string }{Name: structName})
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+
+			_, fileAstTmp := openGolangSourceFile(filename)
+			structDecl := source.FindStructDeclByName(fileAstTmp, structName)
+
+			file.Decls = append(file.Decls, structDecl)
+		}
+	}
+
+	writeSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedResponseModels() {
-	// TODO:
+	fs, file := openGolangSourceFile(ef.filename)
+
+	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/empty-struct.tmpl"))
+
+	for _, action := range ef.serviceActions {
+		structName := naming.GetEndpointResponseStructName(action)
+		respModelDecl := source.FindStructDeclByName(file, structName)
+		if nil == respModelDecl {
+			filename := action + ".tmp"
+			fileTmp, err := os.Create(filename)
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+			err = tmpl.Execute(fileTmp, struct{ Name string }{Name: structName})
+			if nil != err {
+				fmt.Println(err.Error())
+			}
+
+			_, fileAstTmp := openGolangSourceFile(filename)
+			structDecl := source.FindStructDeclByName(fileAstTmp, structName)
+
+			file.Decls = append(file.Decls, structDecl)
+		}
+	}
+
+	writeSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
@@ -122,19 +172,21 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 
 func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 	fs, file := openGolangSourceFile(ef.filename)
+
+	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/endpoint/endpoint-builder-func.tmpl"))
+
 	for _, act := range ef.serviceActions {
 		builderFuncName := naming.GetEndpointBuilderFuncName(act)
 		builderFuncDecl := source.FindFuncDeclByName(file, builderFuncName)
 		if nil == builderFuncDecl {
 
-			transportTmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/endpoint/endpoint-builder-func.tmpl"))
 			//buffer := &bytes.Buffer{}
 			filename := act + ".tmp"
 			fileTmp, err := os.Create(filename)
 			if nil != err {
 				fmt.Println(err.Error())
 			}
-			err = transportTmpl.Execute(fileTmp, struct{ ActionName string }{ActionName: act})
+			err = tmpl.Execute(fileTmp, struct{ ActionName string }{ActionName: act})
 			if nil != err {
 				fmt.Println(err.Error())
 			}

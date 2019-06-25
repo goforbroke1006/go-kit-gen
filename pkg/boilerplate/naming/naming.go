@@ -1,5 +1,13 @@
 package naming
 
+func GetEndpointRequestStructName(actionName string) string {
+	return actionName + "Request"
+}
+
+func GetEndpointResponseStructName(actionName string) string {
+	return actionName + "Response"
+}
+
 func GetEndpointsStructName(serviceName string) string {
 	return serviceName + "Endpoints"
 }
