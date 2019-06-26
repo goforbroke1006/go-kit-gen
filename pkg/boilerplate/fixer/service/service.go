@@ -121,8 +121,8 @@ func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
 			}
 		}
 		if !found {
-			filename := action + ".tmp"
-			fileTmp, err := os.Create(filename)
+			tmpFilename := action + ".tmp"
+			fileTmp, err := os.Create(tmpFilename)
 			if nil != err {
 				fmt.Println(err.Error())
 			}
@@ -134,10 +134,14 @@ func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
 				fmt.Println(err.Error())
 			}
 
-			_, fileAstTmp := fixer.OpenGolangSourceFile(filename)
+			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
 			missedFuncDecl := source.FindFuncDeclByName(fileAstTmp, action)
 
 			file.Decls = append(file.Decls, missedFuncDecl)
+			err = os.Remove(tmpFilename)
+			if nil != err {
+				log.Println("Can't remove file", tmpFilename)
+			}
 
 			//missedFuncDecl := &ast.FuncDecl{
 			//	Recv: &ast.FieldList{

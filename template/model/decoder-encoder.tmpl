@@ -1,0 +1,15 @@
+package tmpl
+
+import "context"
+
+func DecodeGRPC{{ .ActionName }}Request(_ context.Context, pbReq interface{}) (interface{}, error) {
+	_ = r.(*pb.{{ .ActionName }}Request)
+	return endpoint.{{ .ActionName }}Request{}, nil
+}
+
+func EncodeGRPC{{ .ActionName }}Response(_ context.Context, endpResp interface{}) (interface{}, error) {
+	resp := r.(endpoint.{{ .ActionName }}Response)
+	return &pb.{{ .ActionName }}Response{
+		Err:    resp.Err,
+	}, nil
+}

@@ -45,8 +45,8 @@ func (ef EndpointFixer) addMissedRequestModels() {
 		structName := naming.GetEndpointRequestStructName(action)
 		reqModelDecl := source.FindStructDeclByName(file, structName)
 		if nil == reqModelDecl {
-			filename := action + ".tmp"
-			fileTmp, err := os.Create(filename)
+			tmpFilename := action + ".tmp"
+			fileTmp, err := os.Create(tmpFilename)
 			if nil != err {
 				fmt.Println(err.Error())
 			}
@@ -55,8 +55,13 @@ func (ef EndpointFixer) addMissedRequestModels() {
 				fmt.Println(err.Error())
 			}
 
-			_, fileAstTmp := fixer.OpenGolangSourceFile(filename)
+			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
 			structDecl := source.FindStructDeclByName(fileAstTmp, structName)
+
+			err = os.Remove(tmpFilename)
+			if nil != err {
+				log.Println("Can't remove file", tmpFilename)
+			}
 
 			file.Decls = append(file.Decls, structDecl)
 		}
@@ -74,8 +79,8 @@ func (ef EndpointFixer) addMissedResponseModels() {
 		structName := naming.GetEndpointResponseStructName(action)
 		respModelDecl := source.FindStructDeclByName(file, structName)
 		if nil == respModelDecl {
-			filename := action + ".tmp"
-			fileTmp, err := os.Create(filename)
+			tmpFilename := action + ".tmp"
+			fileTmp, err := os.Create(tmpFilename)
 			if nil != err {
 				fmt.Println(err.Error())
 			}
@@ -84,8 +89,13 @@ func (ef EndpointFixer) addMissedResponseModels() {
 				fmt.Println(err.Error())
 			}
 
-			_, fileAstTmp := fixer.OpenGolangSourceFile(filename)
+			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
 			structDecl := source.FindStructDeclByName(fileAstTmp, structName)
+
+			err = os.Remove(tmpFilename)
+			if nil != err {
+				log.Println("Can't remove file", tmpFilename)
+			}
 
 			file.Decls = append(file.Decls, structDecl)
 		}
@@ -188,8 +198,8 @@ func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 		if nil == builderFuncDecl {
 
 			//buffer := &bytes.Buffer{}
-			filename := act + ".tmp"
-			fileTmp, err := os.Create(filename)
+			tmpFilename := act + ".tmp"
+			fileTmp, err := os.Create(tmpFilename)
 			if nil != err {
 				fmt.Println(err.Error())
 			}
@@ -198,8 +208,13 @@ func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 				fmt.Println(err.Error())
 			}
 
-			_, fileAstTmp := fixer.OpenGolangSourceFile(filename)
+			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
 			funcDecl := source.FindFuncDeclByName(fileAstTmp, builderFuncName)
+
+			err = os.Remove(tmpFilename)
+			if nil != err {
+				log.Println("Can't remove file", tmpFilename)
+			}
 
 			file.Decls = append(file.Decls, funcDecl)
 			// TODO: move with comments!!!

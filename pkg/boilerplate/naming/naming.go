@@ -33,3 +33,13 @@ func GetMakeEndpointsFuncName(serviceName string) string {
 func GetEndpointBuilderFuncName(actionName string) string {
 	return "make" + actionName + "Endpoint"
 }
+
+// model
+
+func GetDecodePbToEndpRequestMethodName(actionName string) string {
+	return "DecodeGRPC" + actionName + "Request"
+}
+
+func GetEncodeEndpToPbResponseMethodName(actionName string) string {
+	return "EncodeGRPC" + actionName + "Response"
+}

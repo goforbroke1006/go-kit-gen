@@ -8,12 +8,12 @@ import (
 )
 
 {{ range .MethodNames }}
-func DecodeGRPC{{ . }}Request(_ context.Context, r interface{}) (interface{}, error) {
+func DecodeGRPC{{ . }}Request(_ context.Context, pbReq interface{}) (interface{}, error) {
 	_ = r.(*pb.{{ . }}Request)
 	return endpoint.{{ . }}Request{}, nil
 }
 
-func EncodeGRPC{{ . }}Response(_ context.Context, r interface{}) (interface{}, error) {
+func EncodeGRPC{{ . }}Response(_ context.Context, endpResp interface{}) (interface{}, error) {
 	resp := r.(endpoint.{{ . }}Response)
 	// TODO: write convert logic
 	return &pb.{{ . }}Response{
