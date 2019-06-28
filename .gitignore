@@ -1,4 +1,4 @@
 *.tmp
-*.test.tmp.go
+*.tmp.go
 
 .idea

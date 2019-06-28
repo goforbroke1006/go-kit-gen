@@ -54,7 +54,7 @@ func (apb *AstPrimitiveBuilder) CreateFuncDecl(
 	return funcDecl
 }
 
-func (apb AstPrimitiveBuilder) CreateCompositeLit(
+func (apb AstPrimitiveBuilder) CreateCompositeLiteralExpr(
 	structName string,
 	namesToValues map[string]ast.Expr,
 ) *ast.CompositeLit {

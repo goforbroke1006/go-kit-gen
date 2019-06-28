@@ -13,25 +13,25 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 		Name: ast.NewIdent("testdata"),
 	}
 
-	sfb := AstPrimitiveBuilder{}
-	funcDecl := sfb.CreateFuncDecl(
+	apb := AstPrimitiveBuilder{}
+	funcDecl := apb.CreateFuncDecl(
 		"MakeSomeAwesomeHubEndpoints",
 		map[string]string{
-			"ctx":    "context.Context",
-			"svc":    "service.SomeAwesomeHub",
-			"config": "",
+			"ctx": "context.Context",
+			"svc": "service.SomeAwesomeHubService",
 		},
 		map[string]string{
 			"resp": "",
 			"err":  "error",
 		},
 		[]interface{}{
-			sfb.CreateCompositeLit(
-				"SomeEndpoints",
+			apb.CreateCompositeLiteralExpr(
+				"SomeAwesomeHubEndpoints",
 				map[string]ast.Expr{
-					"MethodOneEndpoint": sfb.CreateMethodCallExpr("makeMethodOneEndpoint", []string{
-						"svc",
-					}),
+					"MethodOneEndpoint": apb.CreateMethodCallExpr(
+						"makeMethodOneEndpoint",
+						[]string{"svc"},
+					),
 				},
 			),
 			nil,
