@@ -5,21 +5,30 @@ import (
 	"strings"
 )
 
-type SourceFileBuilder struct {
-	file *ast.File
+type AstPrimitiveBuilder struct {
 }
 
-func (sfb SourceFileBuilder) CreateFunc(name string, params map[string]string, returns map[string]string) {
+func (apb *AstPrimitiveBuilder) CreateFuncDecl(
+	name string,
+	params map[string]string,
+	returns map[string]string,
+	returnStmtVals []interface{},
+) *ast.FuncDecl {
 	funcDecl := &ast.FuncDecl{}
 	funcDecl.Name = ast.NewIdent(name)
+
 	funcDecl.Type = &ast.FuncType{
-		Params:  declsMapToFieldList(params),
-		Results: declsMapToFieldList(returns),
+		Params:  &ast.FieldList{List: declsMapToFieldList(params)},
+		Results: &ast.FieldList{List: declsMapToFieldList(returns)},
 	}
 
 	var returnEexprs []ast.Expr
-	for range returns {
-		returnEexprs = append(returnEexprs, ast.NewIdent("nil"))
+	for _, resVal := range returnStmtVals {
+		if nil == resVal {
+			returnEexprs = append(returnEexprs, ast.NewIdent("nil"))
+		} else {
+			returnEexprs = append(returnEexprs, resVal.(ast.Expr))
+		}
 	}
 	funcDecl.Body = &ast.BlockStmt{
 		List: []ast.Stmt{
@@ -40,12 +49,38 @@ func (sfb SourceFileBuilder) CreateFunc(name string, params map[string]string, r
 	//		},
 	//	},
 	//}
-	//sfb.file.Comments = append(sfb.file.Comments, cg)
+	//apb.file.Comments = append(apb.file.Comments, cg)
 
-	sfb.file.Decls = append(sfb.file.Decls, funcDecl)
+	return funcDecl
 }
 
-func declsMapToFieldList(decls map[string]string) *ast.FieldList {
+func (apb AstPrimitiveBuilder) CreateCompositeLit(
+	structName string,
+	namesToValues map[string]ast.Expr,
+) *ast.CompositeLit {
+	ident := &ast.CompositeLit{}
+	ident.Type = ast.NewIdent(structName)
+	ident.Elts = mapToStructFieldsInitialization(namesToValues)
+	return ident
+}
+
+func (apb AstPrimitiveBuilder) CreateMethodCallExpr(
+	funcName string,
+	args []string,
+) *ast.CallExpr {
+
+	var exprs []ast.Expr
+	for _, argName := range args {
+		exprs = append(exprs, ast.NewIdent(argName))
+	}
+
+	return &ast.CallExpr{
+		Fun:  ast.NewIdent(funcName),
+		Args: exprs,
+	}
+}
+
+func declsMapToFieldList(decls map[string]string) []*ast.Field {
 	fields := make([]*ast.Field, len(decls))
 
 	counter := 0
@@ -75,10 +110,21 @@ func declsMapToFieldList(decls map[string]string) *ast.FieldList {
 			}
 		}
 
-		//fields = append(fields, paramDecl)
 		fields[counter] = paramDecl
 		counter++
 	}
 
-	return &ast.FieldList{List: fields}
+	return fields
+}
+
+func mapToStructFieldsInitialization(m map[string]ast.Expr) []ast.Expr {
+	var result []ast.Expr
+	for name, value := range m {
+		initRow := &ast.KeyValueExpr{
+			Key:   ast.NewIdent(name),
+			Value: value,
+		}
+		result = append(result, initRow)
+	}
+	return result
 }

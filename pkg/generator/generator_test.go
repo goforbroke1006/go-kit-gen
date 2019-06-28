@@ -9,31 +9,39 @@ import (
 )
 
 func TestSourceFileBuilder_CreateFunc(t *testing.T) {
-	//filename := "testdata/TestSourceFileBuilder_CreateFunc.test.tmp.go"
-
-	//fs := token.NewFileSet()
-	//fileGo, err := parser.ParseFile(fs, filename, nil, parser.AllErrors)
-	//if nil != err {
-	//	log.Fatal(err)
-	//}
-
-	sfb := SourceFileBuilder{
-		file: &ast.File{
-			Name: ast.NewIdent("testdata"),
-		},
+	file := &ast.File{
+		Name: ast.NewIdent("testdata"),
 	}
-	sfb.CreateFunc(
-		"SomeFunc",
+
+	sfb := AstPrimitiveBuilder{}
+	funcDecl := sfb.CreateFuncDecl(
+		"MakeSomeAwesomeHubEndpoints",
 		map[string]string{
-			"ctx": "context.Context",
-			"req": "",
+			"ctx":    "context.Context",
+			"svc":    "service.SomeAwesomeHub",
+			"config": "",
 		},
 		map[string]string{
 			"resp": "",
 			"err":  "error",
 		},
+		[]interface{}{
+			sfb.CreateCompositeLit(
+				"SomeEndpoints",
+				map[string]ast.Expr{
+					"MethodOneEndpoint": sfb.CreateMethodCallExpr("makeMethodOneEndpoint", []string{
+						"svc",
+					}),
+				},
+			),
+			nil,
+		},
 	)
 
+	file.Decls = append(file.Decls, funcDecl)
+
 	fs := token.NewFileSet()
-	printer.Fprint(os.Stdout, fs, sfb.file)
+	printer.Fprint(os.Stdout, fs, file)
+
+	// TODO: add assertion check
 }
