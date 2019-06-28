@@ -6,6 +6,12 @@ import (
 )
 
 func InitProjectDirs(workingDirPath string) {
+	if _, err := os.Stat(workingDirPath); os.IsNotExist(err) {
+		if err := os.Mkdir(workingDirPath, os.ModePerm); nil != err {
+			log.Fatal(err)
+		}
+	}
+
 	dirs := []string{
 		"service",
 		"endpoint",

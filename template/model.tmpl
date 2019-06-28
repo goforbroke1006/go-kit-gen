@@ -9,16 +9,16 @@ import (
 
 {{ range .MethodNames }}
 func DecodeGRPC{{ . }}Request(_ context.Context, pbReq interface{}) (interface{}, error) {
-	_ = r.(*pb.{{ . }}Request)
+	_ = pbReq.(*pb.{{ . }}Request)
 	return endpoint.{{ . }}Request{}, nil
 }
 
 func EncodeGRPC{{ . }}Response(_ context.Context, endpResp interface{}) (interface{}, error) {
-	resp := r.(endpoint.{{ . }}Response)
+	resp := endpResp.(endpoint.{{ . }}Response)
 	// TODO: write convert logic
 	return &pb.{{ . }}Response{
-		//FieldOne: resp.FieldOne,
-		Err:    resp.Err,
+		//FieldOne: endpResp.FieldOne,
+		Err:    endpResp.Err,
 	}, nil
 }
 {{ end }}
