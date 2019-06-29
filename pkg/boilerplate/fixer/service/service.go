@@ -2,6 +2,7 @@ package service
 
 import (
 	"fmt"
+	fixer2 "github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"go/ast"
 	"go/token"
 	"log"
@@ -9,8 +10,7 @@ import (
 	"text/template"
 
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/source"
-	"github.com/goforbroke1006/go-kit-gen/pkg/fixer"
+	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
 )
 
 func NewServiceFixer(filename, serviceName string, serviceActions []string) *ServiceFixer {
@@ -35,7 +35,7 @@ func (sf ServiceFixer) Fix() {
 }
 
 func (sf ServiceFixer) addMissedMethodSignaturesInServiceInterface() {
-	fs, file := fixer.OpenGolangSourceFile(sf.filename)
+	fs, file := fixer2.OpenGolangSourceFile(sf.filename)
 
 	serviceInterfaceName := naming.GetServiceInterfaceName(sf.serviceName)
 	ifc := source.FindInterfaceByName(file, serviceInterfaceName)
@@ -96,11 +96,11 @@ func (sf ServiceFixer) addMissedMethodSignaturesInServiceInterface() {
 		}
 	}
 
-	fixer.WriteSourceFile(sf.filename, file, fs)
+	fixer2.WriteSourceFile(sf.filename, file, fs)
 }
 
 func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
-	fs, file := fixer.OpenGolangSourceFile(sf.filename)
+	fs, file := fixer2.OpenGolangSourceFile(sf.filename)
 	implStructName := naming.GetServicePrivateImplStructName(sf.serviceName)
 	svcImplStructDecl := source.FindStructDeclByName(file, implStructName)
 	if nil == svcImplStructDecl {
@@ -134,7 +134,7 @@ func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
 				fmt.Println(err.Error())
 			}
 
-			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
+			_, fileAstTmp := fixer2.OpenGolangSourceFile(tmpFilename)
 			missedFuncDecl := source.FindFuncDeclByName(fileAstTmp, action)
 
 			file.Decls = append(file.Decls, missedFuncDecl)
@@ -167,5 +167,5 @@ func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
 		}
 	}
 
-	fixer.WriteSourceFile(sf.filename, file, fs)
+	fixer2.WriteSourceFile(sf.filename, file, fs)
 }

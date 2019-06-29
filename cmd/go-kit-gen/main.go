@@ -3,9 +3,10 @@ package main
 import (
 	"flag"
 	"fmt"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate"
-	"github.com/goforbroke1006/go-kit-gen/pkg/fixer/endpoint"
-	"github.com/goforbroke1006/go-kit-gen/pkg/fixer/service"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/endpoint"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/service"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/project"
+	"github.com/goforbroke1006/go-kit-gen/pkg/old"
 	"log"
 	"os"
 	"os/exec"
@@ -69,14 +70,14 @@ func main() {
 		log.Printf("Command finished with error: %v", err)
 	}
 
-	boilerplate.InitProjectDirs(workingDirPath)
+	project.InitProjectDirs(workingDirPath)
 
 	protoGenFilename := workingDirPath + "/" + strings.TrimSuffix(*protoFile, "proto") + "pb.go"
-	interfaces := boilerplate.ExtractServerInterface(protoGenFilename, *serviceName)
+	interfaces := old.ExtractServerInterface(protoGenFilename, *serviceName)
 
 	//fmt.Println(itf.Name.Name)
 	var methodNames []string
-	methods := boilerplate.ExtractMethodsFromType(interfaces)
+	methods := old.ExtractMethodsFromType(interfaces)
 	for _, f := range methods {
 		methodNames = append(methodNames, f.Names[0].Name)
 	}
@@ -108,7 +109,7 @@ func main() {
 	{
 		serviceFilename := workingDirPath + "/service/service.go"
 		if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
-			boilerplate.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
+			old.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
 		} else {
 			//fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
 			serviceFixer := service.NewServiceFixer(serviceFilename, *serviceName, methodNames)
@@ -119,7 +120,7 @@ func main() {
 	{
 		endpointFilename := workingDirPath + "/endpoint/endpoint.go"
 		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
-			boilerplate.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
+			old.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
 		} else {
 			endpointFixer := endpoint.NewEndpointFixer(endpointFilename, *serviceName, methodNames)
 			endpointFixer.Fix()
@@ -129,7 +130,7 @@ func main() {
 	{
 		modelFilename := workingDirPath + "/model/model.go"
 		if _, err := os.Stat(modelFilename); os.IsNotExist(err) {
-			boilerplate.CreateNewFromTemplate(modelFilename, "template/model.tmpl", data)
+			old.CreateNewFromTemplate(modelFilename, "template/model.tmpl", data)
 		} else {
 			fmt.Println("File", modelFilename, "already exists! Please edit it manually!")
 		}
@@ -138,7 +139,7 @@ func main() {
 	{
 		transportFilename := workingDirPath + "/transport/transport.go"
 		if _, err := os.Stat(transportFilename); os.IsNotExist(err) {
-			boilerplate.CreateNewFromTemplate(transportFilename, "template/transport.tmpl", data)
+			old.CreateNewFromTemplate(transportFilename, "template/transport.tmpl", data)
 		} else {
 			fmt.Println("File", transportFilename, "already exists! Please edit it manually!")
 		}

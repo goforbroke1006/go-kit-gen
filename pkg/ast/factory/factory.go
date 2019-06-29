@@ -1,4 +1,4 @@
-package builder
+package factory
 
 import (
 	"go/ast"
@@ -6,10 +6,10 @@ import (
 	"strings"
 )
 
-type AstPrimitiveBuilder struct {
+type AstPrimitiveFactory struct {
 }
 
-func (apb AstPrimitiveBuilder) CreateStructDecl(
+func (apb AstPrimitiveFactory) CreateStructDecl(
 	structName string,
 	properties map[string]string,
 ) *ast.GenDecl {
@@ -32,7 +32,7 @@ func (apb AstPrimitiveBuilder) CreateStructDecl(
 	return structDecl
 }
 
-func (apb AstPrimitiveBuilder) CreateFuncDecl(
+func (apb AstPrimitiveFactory) CreateFuncDecl(
 	name string,
 	params map[string]string,
 	returns map[string]string,
@@ -81,7 +81,7 @@ func (apb AstPrimitiveBuilder) CreateFuncDecl(
 	return funcDecl
 }
 
-func (apb AstPrimitiveBuilder) CreateCompositeLiteralExpr(
+func (apb AstPrimitiveFactory) CreateCompositeLiteralExpr(
 	structName string,
 	namesToValues map[string]ast.Expr,
 ) *ast.CompositeLit {
@@ -109,7 +109,7 @@ func (apb AstPrimitiveBuilder) CreateCompositeLiteralExpr(
 	return ident
 }
 
-func (apb AstPrimitiveBuilder) CreateMethodCallExpr(
+func (apb AstPrimitiveFactory) CreateMethodCallExpr(
 	funcName string,
 	args []string,
 ) *ast.CallExpr {

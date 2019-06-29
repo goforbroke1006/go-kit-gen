@@ -7,7 +7,11 @@ import (
 	"log"
 )
 
-func NewAstFileIterator(filename string) *AstFileIterator {
+func NewAstFileIterator(file *ast.File) *AstFileIterator {
+	return &AstFileIterator{file: file}
+}
+
+func NewAstFileIteratorForFile(filename string) *AstFileIterator {
 	fs := token.NewFileSet()
 	file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
 	if nil != err {

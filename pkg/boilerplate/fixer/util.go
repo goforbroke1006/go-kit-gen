@@ -18,7 +18,7 @@ func OpenGolangSourceFile(filename string) (*token.FileSet, *ast.File) {
 	return fs, file
 }
 
-func WriteSourceFile(filename string, file *ast.File, fs *token.FileSet) {
+func WriteSourceFile(filename string, file *ast.File, fset *token.FileSet) {
 	out, err := os.OpenFile(filename, os.O_RDWR, 066)
 	if nil != err {
 		log.Fatal(err)
@@ -30,7 +30,8 @@ func WriteSourceFile(filename string, file *ast.File, fs *token.FileSet) {
 		log.Fatal(err)
 	}
 
-	err = printer.Fprint(out, fs, file)
+	//fs := token.NewFileSet()
+	err = printer.Fprint(out, fset, file)
 	if nil != err {
 		log.Fatal(err)
 	}

@@ -1,6 +1,8 @@
 package model
 
-import "github.com/goforbroke1006/go-kit-gen/pkg/fixer"
+import (
+	fixer2 "github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
+)
 
 func NewModelFixed(filename, serviceName string, serviceActions []string) *ModelFixed {
 	return &ModelFixed{
@@ -19,7 +21,7 @@ type ModelFixed struct {
 }
 
 func (mf ModelFixed) Fix() {
-	fs, astFile := fixer.OpenGolangSourceFile(mf.filename)
+	fs, astFile := fixer2.OpenGolangSourceFile(mf.filename)
 	// TODO:
-	fixer.WriteSourceFile(mf.filename, astFile, fs)
+	fixer2.WriteSourceFile(mf.filename, astFile, fs)
 }

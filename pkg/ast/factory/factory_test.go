@@ -1,4 +1,4 @@
-package builder
+package factory
 
 import (
 	"go/ast"
@@ -14,7 +14,7 @@ func TestSourceFileBuilder_CreateStructDecl(t *testing.T) {
 		Name: ast.NewIdent("testdata"),
 	}
 
-	apb := AstPrimitiveBuilder{}
+	apb := AstPrimitiveFactory{}
 	structDecl := apb.CreateStructDecl(
 		"SomeAwesomeHubEndpoints",
 		map[string]string{
@@ -32,11 +32,11 @@ func TestSourceFileBuilder_CreateStructDecl(t *testing.T) {
 	log.Println(sb.String())
 
 	if !strings.Contains(sb.String(), "type SomeAwesomeHubEndpoints struct") {
-		t.Errorf("AstPrimitiveBuilder.CreateStructDecl() works wrong, can't find struct declaration")
+		t.Errorf("AstPrimitiveFactory.CreateStructDecl() works wrong, can't find struct declaration")
 	}
 
 	if !strings.Contains(sb.String(), "MethodOneEndpoint	endpoint.Endpoint") {
-		t.Errorf("AstPrimitiveBuilder.CreateStructDecl() works wrong, can't find struct's prop declaration")
+		t.Errorf("AstPrimitiveFactory.CreateStructDecl() works wrong, can't find struct's prop declaration")
 	}
 
 	// TODO: add assertion check
@@ -47,7 +47,7 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 		Name: ast.NewIdent("testdata"),
 	}
 
-	apb := AstPrimitiveBuilder{}
+	apb := AstPrimitiveFactory{}
 	funcDecl := apb.CreateFuncDecl(
 		"MakeSomeAwesomeHubEndpoints",
 		map[string]string{
@@ -82,10 +82,10 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 	log.Println(sb.String())
 
 	if !strings.Contains(sb.String(), "func MakeSomeAwesomeHubEndpoints") {
-		t.Errorf("AstPrimitiveBuilder.CreateFuncDecl() works wrong, can't find func declaration")
+		t.Errorf("AstPrimitiveFactory.CreateFuncDecl() works wrong, can't find func declaration")
 	}
 
 	if !strings.Contains(sb.String(), "MethodOneEndpoint: makeMethodOneEndpoint(svc)") {
-		t.Errorf("AstPrimitiveBuilder.CreateCompositeLiteralExpr() works wrong, funct return literal")
+		t.Errorf("AstPrimitiveFactory.CreateCompositeLiteralExpr() works wrong, funct return literal")
 	}
 }

@@ -1,4 +1,4 @@
-package boilerplate
+package old
 
 import (
 	"go/ast"

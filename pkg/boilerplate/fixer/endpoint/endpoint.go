@@ -2,30 +2,35 @@ package endpoint
 
 import (
 	"fmt"
-	"github.com/goforbroke1006/go-kit-gen/pkg/fixer"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"go/ast"
 	"log"
 	"os"
 	"text/template"
 
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/source"
+	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
 )
 
-func NewEndpointFixer(filename, serviceName string, serviceActions []string) *EndpointFixer {
+func NewEndpointFixer(file *ast.File, serviceName string, serviceActions map[string]map[string]string) *EndpointFixer {
 	return &EndpointFixer{
-		filename:        filename,
-		serviceName:     serviceName,
-		serviceActions:  serviceActions,
-		templatesRelDir: "./",
+		file:           file,
+		serviceName:    serviceName,
+		serviceActions: serviceActions,
 	}
 }
 
 type EndpointFixer struct {
-	filename        string
+	file            *ast.File
 	serviceName     string
-	serviceActions  []string
+	serviceActions  map[string]map[string]string
 	templatesRelDir string
+}
+
+func (ef EndpointFixer) GetFile() *ast.File {
+	return ef.file
 }
 
 func (ef EndpointFixer) Fix() {
@@ -37,47 +42,28 @@ func (ef EndpointFixer) Fix() {
 }
 
 func (ef EndpointFixer) addMissedRequestModels() {
-	fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	afi := iterator.NewAstFileIterator(ef.file)
+	apf := factory.AstPrimitiveFactory{}
 
-	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/empty-struct.tmpl"))
-
-	for _, action := range ef.serviceActions {
+	for action, propsDescrList := range ef.serviceActions {
 		structName := naming.GetEndpointRequestStructName(action)
-		reqModelDecl := source.FindStructDeclByName(file, structName)
+		reqModelDecl := afi.GetStructDecl(structName)
 		if nil == reqModelDecl {
-			tmpFilename := action + ".tmp"
-			fileTmp, err := os.Create(tmpFilename)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-			err = tmpl.Execute(fileTmp, struct{ Name string }{Name: structName})
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-
-			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
-			structDecl := source.FindStructDeclByName(fileAstTmp, structName)
-
-			err = os.Remove(tmpFilename)
-			if nil != err {
-				log.Println("Can't remove file", tmpFilename)
-			}
-
-			file.Decls = append(file.Decls, structDecl)
+			reqModelDecl = apf.CreateStructDecl(structName, propsDescrList)
+			ef.file.Decls = append(ef.file.Decls, reqModelDecl)
+			log.Println("Create", structName, "struct")
 		}
 	}
-
-	fixer.WriteSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedResponseModels() {
-	fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
 
 	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/empty-struct.tmpl"))
 
-	for _, action := range ef.serviceActions {
+	for action := range ef.serviceActions {
 		structName := naming.GetEndpointResponseStructName(action)
-		respModelDecl := source.FindStructDeclByName(file, structName)
+		respModelDecl := source.FindStructDeclByName(ef.file, structName)
 		if nil == respModelDecl {
 			tmpFilename := action + ".tmp"
 			fileTmp, err := os.Create(tmpFilename)
@@ -97,18 +83,16 @@ func (ef EndpointFixer) addMissedResponseModels() {
 				log.Println("Can't remove file", tmpFilename)
 			}
 
-			file.Decls = append(file.Decls, structDecl)
+			ef.file.Decls = append(ef.file.Decls, structDecl)
 		}
 	}
-
-	fixer.WriteSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
-	fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
 
 	endpointsStructName := naming.GetEndpointsStructName(ef.serviceName)
-	endpointsStructure := source.FindStructDeclByName(file, endpointsStructName)
+	endpointsStructure := source.FindStructDeclByName(ef.file, endpointsStructName)
 	if nil == endpointsStructure {
 		log.Println("Cant find endpoint struct", endpointsStructName)
 		return
@@ -117,7 +101,7 @@ func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
 	propBuilder := source.NewStructBuilder(endpointsStructure)
 
 	properties := propBuilder.GetStructProperties()
-	for _, action := range ef.serviceActions {
+	for action := range ef.serviceActions {
 		found := false
 		for _, prop := range properties {
 			if prop.Names[0].Name == naming.GetEndpointFieldName(action) {
@@ -137,13 +121,13 @@ func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
 		}
 	}
 
-	fixer.WriteSourceFile(ef.filename, file, fs)
+	//fixer.WriteSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
-	fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
 	endpointsFuncName := naming.GetMakeEndpointsFuncName(ef.serviceName)
-	funcDecl := source.FindFuncDeclByName(file, endpointsFuncName)
+	funcDecl := source.FindFuncDeclByName(ef.file, endpointsFuncName)
 	if nil == funcDecl {
 		log.Println("Can't find make endpoints func", endpointsFuncName)
 		return
@@ -152,7 +136,7 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 	var missedActionsList []string
 
 	{
-		for _, action := range ef.serviceActions {
+		for action := range ef.serviceActions {
 			found := false
 			for _, initVal := range funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts {
 				if initVal.(*ast.KeyValueExpr).Key.(*ast.Ident).Name == naming.GetEndpointFieldName(action) {
@@ -184,26 +168,26 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 		funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts = exprs
 	}
 
-	fixer.WriteSourceFile(ef.filename, file, fs)
+	//fixer.WriteSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
-	fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
 
 	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/endpoint/endpoint-builder-func.tmpl"))
 
-	for _, act := range ef.serviceActions {
-		builderFuncName := naming.GetEndpointBuilderFuncName(act)
-		builderFuncDecl := source.FindFuncDeclByName(file, builderFuncName)
+	for action := range ef.serviceActions {
+		builderFuncName := naming.GetEndpointBuilderFuncName(action)
+		builderFuncDecl := source.FindFuncDeclByName(ef.file, builderFuncName)
 		if nil == builderFuncDecl {
 
 			//buffer := &bytes.Buffer{}
-			tmpFilename := act + ".tmp"
+			tmpFilename := action + ".tmp"
 			fileTmp, err := os.Create(tmpFilename)
 			if nil != err {
 				fmt.Println(err.Error())
 			}
-			err = tmpl.Execute(fileTmp, struct{ ActionName string }{ActionName: act})
+			err = tmpl.Execute(fileTmp, struct{ ActionName string }{ActionName: action})
 			if nil != err {
 				fmt.Println(err.Error())
 			}
@@ -216,9 +200,9 @@ func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 				log.Println("Can't remove file", tmpFilename)
 			}
 
-			file.Decls = append(file.Decls, funcDecl)
+			ef.file.Decls = append(ef.file.Decls, funcDecl)
 			// TODO: move with comments!!!
 		}
 	}
-	fixer.WriteSourceFile(ef.filename, file, fs)
+	//fixer.WriteSourceFile(ef.filename, file, fs)
 }

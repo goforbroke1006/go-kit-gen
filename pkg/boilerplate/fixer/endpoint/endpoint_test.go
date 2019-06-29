@@ -1,6 +1,7 @@
 package endpoint
 
 import (
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"io/ioutil"
 	"log"
 	"os"
@@ -11,6 +12,24 @@ import (
 var ef *EndpointFixer
 
 const endpointUnfinishedSampleFilename = "testdata/endpoint.go.sample.txt"
+const experimentalSampleFilename = "testdata/endpoint-result.tmp"
+const testServiceName = "SomeAwesomeHub"
+
+var testServiceActions = map[string]map[string]string{
+	"MethodOne": {
+		"FieldOne": "string",
+	},
+	"MethodTwo": {
+		"FieldOne": "string",
+		"FieldTwo": "uint64",
+	},
+	"MethodThree": {
+		"FieldOne":   "string",
+		"FieldTwo":   "string",
+		"FieldThree": "",
+	},
+	"SayHello": {},
+}
 
 func recreateTestSourceFile(sampleFilename, filename string) {
 	initContent, err := ioutil.ReadFile(sampleFilename)
@@ -24,40 +43,31 @@ func recreateTestSourceFile(sampleFilename, filename string) {
 	}
 }
 
-func TestMain(m *testing.M) {
-
-	const templatesDirRelateToTestDir = "../../../../"
-	const testServiceName = "SomeAwesomeHub"
-	testServiceActions := []string{
-		"MethodOne",
-		"MethodTwo",
-		"MethodThree",
-		"SayHello",
-	}
-
-	{
-		filename := "testdata/endpoint-result.tmp"
-		ef = &EndpointFixer{
-			filename:        filename,
-			serviceName:     testServiceName,
-			serviceActions:  testServiceActions,
-			templatesRelDir: templatesDirRelateToTestDir,
-		}
-		recreateTestSourceFile(endpointUnfinishedSampleFilename, filename)
-	}
-
-	os.Exit(m.Run())
-}
+//func TestMain(m *testing.M) {
+//
+//	_, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
+//	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
+//	recreateTestSourceFile(endpointUnfinishedSampleFilename, experimentalSampleFilename)
+//
+//	os.Exit(m.Run())
+//}
 
 func TestEndpointFixer_addMissedRequestModels(t *testing.T) {
+	recreateTestSourceFile(endpointUnfinishedSampleFilename, experimentalSampleFilename)
+
+	fset, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
+
+	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
 	ef.addMissedRequestModels()
 
-	result, err := ioutil.ReadFile(ef.filename)
+	fixer.WriteSourceFile(experimentalSampleFilename, file, fset)
+
+	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	for _, action := range ef.serviceActions {
+	for action := range ef.serviceActions {
 		if !strings.Contains(string(result), "type "+action+"Request struct") {
 			t.Fatal("" + action + "Request struct is missed")
 		}
@@ -67,12 +77,12 @@ func TestEndpointFixer_addMissedRequestModels(t *testing.T) {
 func TestEndpointFixer_addMissedResponseModels(t *testing.T) {
 	ef.addMissedResponseModels()
 
-	result, err := ioutil.ReadFile(ef.filename)
+	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	for _, action := range ef.serviceActions {
+	for action := range ef.serviceActions {
 		if !strings.Contains(string(result), "type "+action+"Response struct") {
 			t.Fatal("" + action + "Response struct is missed")
 		}
@@ -82,12 +92,12 @@ func TestEndpointFixer_addMissedResponseModels(t *testing.T) {
 func TestEndpointFixer_addMissedPropertiesInEndpointsStruct(t *testing.T) {
 	ef.addMissedPropertiesInEndpointsStruct()
 
-	result, err := ioutil.ReadFile(ef.filename)
+	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	for _, action := range ef.serviceActions {
+	for action := range ef.serviceActions {
 		if !strings.Contains(string(result), action+"Endpoint	endpoint.Endpoint") {
 			t.Fatal("" + action + "Endpoint field is missed")
 		}
@@ -97,7 +107,7 @@ func TestEndpointFixer_addMissedPropertiesInEndpointsStruct(t *testing.T) {
 func TestEndpointFixer_addMissedPropertyInitializationInMakeEndpointsFunc(t *testing.T) {
 	ef.addMissedPropertyInitializationInMakeEndpointsFunc()
 
-	result, err := ioutil.ReadFile(ef.filename)
+	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
@@ -110,7 +120,7 @@ func TestEndpointFixer_addMissedPropertyInitializationInMakeEndpointsFunc(t *tes
 func TestEndpointFixer_addMissedEndpointBuilderFunc(t *testing.T) {
 	ef.addMissedEndpointBuilderFunc()
 
-	result, err := ioutil.ReadFile(ef.filename)
+	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
