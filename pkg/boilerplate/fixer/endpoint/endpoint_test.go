@@ -11,8 +11,8 @@ import (
 
 var ef *EndpointFixer
 
-const endpointUnfinishedSampleFilename = "testdata/endpoint.go.sample.txt"
-const experimentalSampleFilename = "testdata/endpoint-result.tmp"
+const endpointUnfinishedSampleFilename = "testdata/endpoint.testdata.go"
+const experimentalSampleFilename = "testdata/results/endpoint.tmp.go"
 const testServiceName = "SomeAwesomeHub"
 
 var testServiceActions = map[string]map[string]string{
@@ -130,14 +130,22 @@ func TestEndpointFixer_addMissedPropertyInitializationInMakeEndpointsFunc(t *tes
 }
 
 func TestEndpointFixer_addMissedEndpointBuilderFunc(t *testing.T) {
+	recreateTestSourceFile(endpointUnfinishedSampleFilename, experimentalSampleFilename)
+	fset, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
+	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
+
 	ef.addMissedEndpointBuilderFunc()
+
+	fixer.WriteSourceFile(experimentalSampleFilename, file, fset)
 
 	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	if !strings.Contains(string(result), "func makeSayHelloEndpoint(") {
-		t.Fatal("makeSayHelloEndpoint endpoint builder func is missed")
+	for action := range ef.serviceActions {
+		if !strings.Contains(string(result), "func make"+action+"Endpoint(") {
+			t.Fatal("make" + action + "Endpoint endpoint builder func is missed")
+		}
 	}
 }

@@ -151,18 +151,25 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 }
 
 func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
-	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	apf := factory.AstPrimitiveFactory{}
 
 	for action := range ef.serviceActions {
 		builderFuncName := naming.GetEndpointBuilderFuncName(action)
 		builderFuncDecl := source.FindFuncDeclByName(ef.file, builderFuncName)
 		if nil == builderFuncDecl {
-
-			// TODO: do magic
-			//ef.file.Decls = append(ef.file.Decls, builderFuncDecl)
-
+			builderFuncDecl := apf.CreateFuncDecl(
+				builderFuncName,
+				map[string]string{"svc": ""},
+				map[string]string{"": "endpoint.Endpoint"},
+				[]ast.Expr{
+					nil,
+					//apf.CreateAnonFuncObjectDecl(map[string]string{}, map[string]string{}, []ast.Expr{}),
+				},
+			)
+			ef.file.Decls = append(ef.file.Decls, builderFuncDecl)
 			// TODO: move with comments!!!
+
+			log.Println("Create", builderFuncName, "function")
 		}
 	}
-	//fixer.WriteSourceFile(ef.filename, file, fs)
 }

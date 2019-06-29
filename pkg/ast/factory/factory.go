@@ -23,9 +23,7 @@ func (apb AstPrimitiveFactory) CreateStructDecl(
 				Name: structName,
 			},
 			Type: &ast.StructType{
-				Fields: &ast.FieldList{
-					List: declsMapToFieldList(properties),
-				},
+				Fields: &ast.FieldList{List: util.MapToFieldList(properties)},
 			},
 		},
 	)
@@ -36,8 +34,12 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 	name string,
 	params map[string]string,
 	returns map[string]string,
-	returnStmtVals []interface{},
+	returnStmtVals []ast.Expr,
 ) *ast.FuncDecl {
+	if nil != returnStmtVals && len(returnStmtVals) != len(returns) {
+		panic("return expr list must have same size like return declaration list")
+	}
+
 	funcDecl := &ast.FuncDecl{}
 	funcDecl.Name = &ast.Ident{
 		Name:    name,
@@ -45,8 +47,8 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 	}
 
 	funcDecl.Type = &ast.FuncType{
-		Params:  &ast.FieldList{List: declsMapToFieldList(params)},
-		Results: &ast.FieldList{List: declsMapToFieldList(returns)},
+		Params:  &ast.FieldList{List: util.MapToFieldList(params)},
+		Results: &ast.FieldList{List: util.MapToFieldList(returns)},
 	}
 
 	var returnEexprs []ast.Expr
@@ -79,6 +81,16 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 	//apb.file.Comments = append(apb.file.Comments, cg)
 
 	return funcDecl
+}
+
+func (apb AstPrimitiveFactory) CreateAnonFuncObjectDecl(
+	params map[string]string,
+	returns map[string]string,
+	returnStmtVals []ast.Expr,
+) *ast.FuncLit {
+	funcLit := &ast.FuncLit{}
+	// TODO: implement me
+	return funcLit
 }
 
 func (apb AstPrimitiveFactory) CreateCompositeLiteralExpr(
@@ -123,25 +135,4 @@ func (apb AstPrimitiveFactory) CreateMethodCallExpr(
 		Fun:  ast.NewIdent(funcName),
 		Args: exprs,
 	}
-}
-
-func declsMapToFieldList(decls map[string]string) []*ast.Field {
-	fields := make([]*ast.Field, len(decls))
-
-	counter := 0
-
-	for varName, typeName := range decls {
-		paramDecl := &ast.Field{
-			Names: []*ast.Ident{
-				ast.NewIdent(varName),
-			},
-		}
-
-		paramDecl.Type = util.StringToAstType(typeName)
-
-		fields[counter] = paramDecl
-		counter++
-	}
-
-	return fields
 }
