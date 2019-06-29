@@ -62,10 +62,8 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 			apb.CreateCompositeLiteralExpr(
 				"SomeAwesomeHubEndpoints",
 				map[string]ast.Expr{
-					"MethodOneEndpoint": apb.CreateMethodCallExpr(
-						"makeMethodOneEndpoint",
-						[]string{"svc"},
-					),
+					"MethodOneEndpoint": apb.CreateMethodCallExpr("makeMethodOneEndpoint", []string{"svc"}),
+					"MethodTwoEndpoint": apb.CreateMethodCallExpr("makeMethodTwoEndpoint", []string{"svc"}),
 				},
 			),
 			nil,
@@ -76,6 +74,9 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 
 	fs := token.NewFileSet()
 	sb := &strings.Builder{}
+
+	ast.Print(fs, funcDecl)
+
 	printer.Fprint(sb, fs, file)
 
 	log.Println(sb.String())

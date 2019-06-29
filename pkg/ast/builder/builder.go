@@ -39,7 +39,10 @@ func (apb AstPrimitiveBuilder) CreateFuncDecl(
 	returnStmtVals []interface{},
 ) *ast.FuncDecl {
 	funcDecl := &ast.FuncDecl{}
-	funcDecl.Name = ast.NewIdent(name)
+	funcDecl.Name = &ast.Ident{
+		Name:    name,
+		NamePos: token.NoPos,
+	}
 
 	funcDecl.Type = &ast.FuncType{
 		Params:  &ast.FieldList{List: declsMapToFieldList(params)},
@@ -82,9 +85,27 @@ func (apb AstPrimitiveBuilder) CreateCompositeLiteralExpr(
 	structName string,
 	namesToValues map[string]ast.Expr,
 ) *ast.CompositeLit {
+	//tokFile := &token.File{}
+
 	ident := &ast.CompositeLit{}
 	ident.Type = ast.NewIdent(structName)
-	ident.Elts = mapToStructFieldsInitialization(namesToValues)
+
+	//headPos := tokFile.Position(ident.Type.End())
+
+	for name, value := range namesToValues {
+		keyIdent := ast.NewIdent(name)
+		keyIdent.NamePos = 0
+		initRow := &ast.KeyValueExpr{
+			Key:   keyIdent,
+			Value: value,
+			//Colon: srcFile.End(),
+			//Colon: tokFile..,
+		}
+		ident.Elts = append(ident.Elts, initRow)
+
+		//tokFile.AddLine(0)
+	}
+
 	return ident
 }
 
@@ -139,16 +160,4 @@ func declsMapToFieldList(decls map[string]string) []*ast.Field {
 	}
 
 	return fields
-}
-
-func mapToStructFieldsInitialization(m map[string]ast.Expr) []ast.Expr {
-	var result []ast.Expr
-	for name, value := range m {
-		initRow := &ast.KeyValueExpr{
-			Key:   ast.NewIdent(name),
-			Value: value,
-		}
-		result = append(result, initRow)
-	}
-	return result
 }
