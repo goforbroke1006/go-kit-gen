@@ -2,7 +2,7 @@ package endpoint
 
 import (
 	"fmt"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
+	"github.com/goforbroke1006/go-kit-gen/pkg/fixer"
 	"go/ast"
 	"log"
 	"os"

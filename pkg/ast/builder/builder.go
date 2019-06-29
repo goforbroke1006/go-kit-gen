@@ -1,14 +1,38 @@
-package generator
+package builder
 
 import (
 	"go/ast"
+	"go/token"
 	"strings"
 )
 
 type AstPrimitiveBuilder struct {
 }
 
-func (apb *AstPrimitiveBuilder) CreateFuncDecl(
+func (apb AstPrimitiveBuilder) CreateStructDecl(
+	structName string,
+	properties map[string]string,
+) *ast.GenDecl {
+	structDecl := &ast.GenDecl{
+		Tok: token.TYPE,
+	}
+	structDecl.Specs = append(
+		structDecl.Specs,
+		&ast.TypeSpec{
+			Name: &ast.Ident{
+				Name: structName,
+			},
+			Type: &ast.StructType{
+				Fields: &ast.FieldList{
+					List: declsMapToFieldList(properties),
+				},
+			},
+		},
+	)
+	return structDecl
+}
+
+func (apb AstPrimitiveBuilder) CreateFuncDecl(
 	name string,
 	params map[string]string,
 	returns map[string]string,

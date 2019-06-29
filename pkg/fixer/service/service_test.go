@@ -37,7 +37,7 @@ func TestServiceFixer_addMissedMethodSignaturesInServiceInterface(t *testing.T) 
 	}
 
 	serviceFixer := buildTestServiceFixer(subjectFilename)
-	serviceFixer.addMissedMethodSignaturesInServiceInterface()
+	addMissedMethodSignaturesInServiceInterface()
 
 	result, err := ioutil.ReadFile(subjectFilename)
 	if nil != err {
@@ -59,14 +59,14 @@ func TestServiceFixer_addMissedMethodImplementationsInPrivateServiceStruct(t *te
 	}
 
 	sf := buildTestServiceFixer(subjectFilename)
-	sf.addMissedMethodImplementationsInPrivateServiceStruct()
+	addMissedMethodImplementationsInPrivateServiceStruct()
 
 	result, err := ioutil.ReadFile(subjectFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	svcNameLow := naming.GetServicePrivateImplStructName(sf.serviceName)
+	svcNameLow := naming.GetServicePrivateImplStructName(serviceName)
 	for _, action := range testServiceActions {
 		if !strings.Contains(string(result), "func (svc "+svcNameLow+") "+action+"(") {
 			t.Fatal("Struct " + svcNameLow + " method " + action + " is missed")

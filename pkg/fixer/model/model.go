@@ -1,6 +1,6 @@
 package model
 
-import "github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
+import "github.com/goforbroke1006/go-kit-gen/pkg/fixer"
 
 func NewModelFixed(filename, serviceName string, serviceActions []string) *ModelFixed {
 	return &ModelFixed{

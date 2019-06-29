@@ -8,9 +8,9 @@ import (
 	"os"
 	"text/template"
 
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/source"
+	"github.com/goforbroke1006/go-kit-gen/pkg/fixer"
 )
 
 func NewServiceFixer(filename, serviceName string, serviceActions []string) *ServiceFixer {

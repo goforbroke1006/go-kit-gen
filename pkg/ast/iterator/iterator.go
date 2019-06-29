@@ -68,7 +68,26 @@ func (afi AstFileIterator) GetStructDecl(structName string) *ast.GenDecl {
 	return nil
 }
 
-func (afi AstFileIterator) GetInterfaceTypeSpec(interfaceName string) *ast.TypeSpec {
+func (afi AstFileIterator) GetStructDeclFull(structName string) (*ast.GenDecl, []*ast.FuncDecl) {
+	structDecl := afi.GetStructDecl(structName)
+
+	var structFuncs []*ast.FuncDecl
+	for _, decl := range afi.file.Decls {
+		switch decl.(type) {
+		case *ast.FuncDecl:
+			if nil == decl.(*ast.FuncDecl).Recv {
+				continue
+			}
+			if structName == decl.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
+				structFuncs = append(structFuncs, decl.(*ast.FuncDecl))
+			}
+		}
+	}
+
+	return structDecl, structFuncs
+}
+
+func (afi AstFileIterator) GetInterfaceTypeSpec(interfaceName string) *ast.GenDecl {
 	for _, d := range afi.file.Decls {
 		switch d.(type) {
 		case *ast.GenDecl:
@@ -76,7 +95,7 @@ func (afi AstFileIterator) GetInterfaceTypeSpec(interfaceName string) *ast.TypeS
 				continue
 			}
 			if interfaceName == d.(*ast.GenDecl).Specs[0].(*ast.TypeSpec).Name.Name {
-				return d.(*ast.GenDecl).Specs[0].(*ast.TypeSpec)
+				return d.(*ast.GenDecl)
 			}
 		}
 	}
@@ -85,18 +104,34 @@ func (afi AstFileIterator) GetInterfaceTypeSpec(interfaceName string) *ast.TypeS
 
 // --------------------------------------------------
 
-func NewAstInterfaceDeclIterator(interfaceType *ast.TypeSpec) *AstInterfaceDeclIterator {
-	return &AstInterfaceDeclIterator{
+func NewAstStructDeclIterator(structDecl *ast.GenDecl) *AstStructDeclIterator {
+	return &AstStructDeclIterator{
+		structDecl: structDecl,
+	}
+}
+
+type AstStructDeclIterator struct {
+	structDecl *ast.GenDecl
+}
+
+func (asdi AstStructDeclIterator) GetProperties() []*ast.Field {
+	return asdi.structDecl.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType).Fields.List
+}
+
+// --------------------------------------------------
+
+func NewAstInterfaceTypeIterator(interfaceType *ast.GenDecl) *AstInterfaceTypeIterator {
+	return &AstInterfaceTypeIterator{
 		interfaceType: interfaceType,
 	}
 }
 
-type AstInterfaceDeclIterator struct {
-	interfaceType *ast.TypeSpec
+type AstInterfaceTypeIterator struct {
+	interfaceType *ast.GenDecl
 }
 
-func (aii AstInterfaceDeclIterator) GetMethodsFieldList() *ast.FieldList {
-	return aii.interfaceType.Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods
+func (aiti AstInterfaceTypeIterator) GetMethodsFieldList() *ast.FieldList {
+	return aiti.interfaceType.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods
 }
 
 // --------------------------------------------------
