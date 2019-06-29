@@ -76,10 +76,10 @@ func main() {
 	interfaces := old.ExtractServerInterface(protoGenFilename, *serviceName)
 
 	//fmt.Println(itf.Name.Name)
-	var methodNames []string
+	var methodNames = map[string]map[string]string{}
 	methods := old.ExtractMethodsFromType(interfaces)
 	for _, f := range methods {
-		methodNames = append(methodNames, f.Names[0].Name)
+		methodNames[f.Names[0].Name] = nil
 	}
 
 	//serviceName := strings.TrimSuffix(interfaces.Name.Name, "Server")
@@ -97,7 +97,7 @@ func main() {
 		ServiceName      string
 		ServiceNameLow   string
 		ProtoFileRelDir  string
-		MethodNames      []string
+		MethodNames      map[string]map[string]string
 	}{
 		ProtoPackageName: "pb", // FIXME: hardcode
 		ServiceName:      *serviceName,
@@ -122,7 +122,7 @@ func main() {
 		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
 			old.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
 		} else {
-			endpointFixer := endpoint.NewEndpointFixer(endpointFilename, *serviceName, methodNames)
+			endpointFixer := endpoint.NewEndpointFixer(nil, *serviceName, methodNames)
 			endpointFixer.Fix()
 		}
 	}

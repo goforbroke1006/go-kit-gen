@@ -6,6 +6,15 @@ import (
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 )
 
+func TestAstFileIterator_GetPackageName(t *testing.T) {
+	_, file := fixer.OpenGolangSourceFile("testdata/enpoint.tmp.go")
+	afi := AstFileIterator{file: file}
+	want := "testdata"
+	if got := afi.GetPackageName(); got != want {
+		t.Errorf("AstFileIterator.GetPackageName() = %v, want %v", got, want)
+	}
+}
+
 func TestAstIterator_GetFuncDecl(t *testing.T) {
 	_, file := fixer.OpenGolangSourceFile("testdata/enpoint.tmp.go")
 	iter := NewAstFileIterator(file)

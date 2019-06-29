@@ -13,7 +13,7 @@ import (
 	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
 )
 
-func NewServiceFixer(filename, serviceName string, serviceActions []string) *ServiceFixer {
+func NewServiceFixer(filename, serviceName string, serviceActions map[string]map[string]string) *ServiceFixer {
 	return &ServiceFixer{
 		filename:        filename,
 		serviceName:     serviceName,
@@ -25,7 +25,7 @@ func NewServiceFixer(filename, serviceName string, serviceActions []string) *Ser
 type ServiceFixer struct {
 	filename        string
 	serviceName     string
-	serviceActions  []string
+	serviceActions  map[string]map[string]string
 	templatesRelDir string
 }
 
@@ -47,7 +47,7 @@ func (sf ServiceFixer) addMissedMethodSignaturesInServiceInterface() {
 	ib := source.NewInterfaceBuilder(ifc)
 	actualMethodsList := ib.GetMethods()
 
-	for _, action := range sf.serviceActions {
+	for action := range sf.serviceActions {
 		found := false
 		for _, methodDecl := range actualMethodsList {
 			if action == methodDecl.Names[0].Name {
@@ -112,7 +112,7 @@ func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
 
 	tmpl := template.Must(template.ParseFiles(sf.templatesRelDir + "template/service/service-impl-struct-sample.tmpl"))
 
-	for _, action := range sf.serviceActions {
+	for action := range sf.serviceActions {
 		found := false
 		for _, m := range actualMethodsList {
 			if action == m.Name.Name {

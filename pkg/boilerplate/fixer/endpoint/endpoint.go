@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"log"
 
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/builder"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
@@ -73,39 +74,33 @@ func (ef EndpointFixer) addMissedResponseModels() {
 }
 
 func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
-	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
-
 	endpointsStructName := naming.GetEndpointsStructName(ef.serviceName)
-	endpointsStructure := source.FindStructDeclByName(ef.file, endpointsStructName)
+
+	afi := iterator.NewAstFileIterator(ef.file)
+	endpointsStructure := afi.GetStructDecl(endpointsStructName)
+
 	if nil == endpointsStructure {
 		log.Println("Cant find endpoint struct", endpointsStructName)
 		return
 	}
 
-	propBuilder := source.NewStructBuilder(endpointsStructure)
+	asdi := iterator.NewAstStructDeclIterator(endpointsStructure)
+	asb := builder.NewAstStructBuilder(endpointsStructure)
 
-	properties := propBuilder.GetStructProperties()
+	properties := asdi.GetProperties()
 	for action := range ef.serviceActions {
 		found := false
+		endpointFieldName := naming.GetEndpointFieldName(action)
 		for _, prop := range properties {
-			if prop.Names[0].Name == naming.GetEndpointFieldName(action) {
+			if endpointFieldName == prop.Names[0].Name {
 				found = true
 				break
 			}
 		}
-
 		if !found {
-			missing := &ast.Field{
-				Names: []*ast.Ident{
-					{Name: naming.GetEndpointFieldName(action)},
-				},
-				Type: properties[0].Type,
-			}
-			propBuilder.StructAddProperty(missing)
+			asb.AddProperty(endpointFieldName, "endpoint.Endpoint")
 		}
 	}
-
-	//fixer.WriteSourceFile(ef.filename, file, fs)
 }
 
 func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {

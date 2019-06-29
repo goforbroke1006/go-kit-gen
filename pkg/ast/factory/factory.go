@@ -1,9 +1,9 @@
 package factory
 
 import (
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/util"
 	"go/ast"
 	"go/token"
-	"strings"
 )
 
 type AstPrimitiveFactory struct {
@@ -137,23 +137,7 @@ func declsMapToFieldList(decls map[string]string) []*ast.Field {
 			},
 		}
 
-		if len(typeName) > 0 {
-			if strings.Contains(typeName, ".") {
-				typeParts := strings.Split(typeName, ".")
-				paramDecl.Type = &ast.SelectorExpr{
-					X:   ast.NewIdent(typeParts[0]),
-					Sel: ast.NewIdent(typeParts[1]),
-				}
-			} else {
-				paramDecl.Type = ast.NewIdent(typeName)
-			}
-		} else {
-			paramDecl.Type = &ast.InterfaceType{
-				Methods:    &ast.FieldList{Opening: 1, Closing: 2},
-				Interface:  0,
-				Incomplete: false,
-			}
-		}
+		paramDecl.Type = util.StringToAstType(typeName)
 
 		fields[counter] = paramDecl
 		counter++

@@ -2,26 +2,18 @@ package iterator
 
 import (
 	"go/ast"
-	"go/parser"
-	"go/token"
-	"log"
 )
 
 func NewAstFileIterator(file *ast.File) *AstFileIterator {
 	return &AstFileIterator{file: file}
 }
 
-func NewAstFileIteratorForFile(filename string) *AstFileIterator {
-	fs := token.NewFileSet()
-	file, err := parser.ParseFile(fs, filename, nil, parser.ParseComments)
-	if nil != err {
-		log.Fatal(err)
-	}
-	return &AstFileIterator{file: file}
-}
-
 type AstFileIterator struct {
 	file *ast.File
+}
+
+func (afi AstFileIterator) GetPackageName() string {
+	return afi.file.Name.Name
 }
 
 func (afi AstFileIterator) GetFuncDecl(funcName string) *ast.FuncDecl {
