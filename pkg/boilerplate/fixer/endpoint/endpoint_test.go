@@ -75,7 +75,14 @@ func TestEndpointFixer_addMissedRequestModels(t *testing.T) {
 }
 
 func TestEndpointFixer_addMissedResponseModels(t *testing.T) {
+	recreateTestSourceFile(endpointUnfinishedSampleFilename, experimentalSampleFilename)
+
+	fset, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
+
+	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
 	ef.addMissedResponseModels()
+
+	fixer.WriteSourceFile(experimentalSampleFilename, file, fset)
 
 	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {

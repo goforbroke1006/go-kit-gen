@@ -57,33 +57,21 @@ func (ef EndpointFixer) addMissedRequestModels() {
 }
 
 func (ef EndpointFixer) addMissedResponseModels() {
-	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
-
-	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/empty-struct.tmpl"))
+	afi := iterator.NewAstFileIterator(ef.file)
+	apf := factory.AstPrimitiveFactory{}
 
 	for action := range ef.serviceActions {
 		structName := naming.GetEndpointResponseStructName(action)
-		respModelDecl := source.FindStructDeclByName(ef.file, structName)
+		respModelDecl := afi.GetStructDecl(structName)
 		if nil == respModelDecl {
-			tmpFilename := action + ".tmp"
-			fileTmp, err := os.Create(tmpFilename)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-			err = tmpl.Execute(fileTmp, struct{ Name string }{Name: structName})
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-
-			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
-			structDecl := source.FindStructDeclByName(fileAstTmp, structName)
-
-			err = os.Remove(tmpFilename)
-			if nil != err {
-				log.Println("Can't remove file", tmpFilename)
-			}
-
-			ef.file.Decls = append(ef.file.Decls, structDecl)
+			respModelDecl = apf.CreateStructDecl(
+				structName,
+				map[string]string{
+					"Err": "string",
+				},
+			)
+			ef.file.Decls = append(ef.file.Decls, respModelDecl)
+			log.Println("Create", structName, "struct")
 		}
 	}
 }
