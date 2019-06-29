@@ -1,12 +1,13 @@
 package service
 
 import (
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
-	"github.com/goforbroke1006/go-kit-gen/pkg/filesystem"
 	"io/ioutil"
 	"log"
 	"strings"
 	"testing"
+
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
+	"github.com/goforbroke1006/go-kit-gen/pkg/filesystem"
 )
 
 const serviceUnfinishedSampleFilename = "testdata/service.go.sample.txt"
@@ -36,8 +37,8 @@ func TestServiceFixer_addMissedMethodSignaturesInServiceInterface(t *testing.T) 
 		log.Fatal(err)
 	}
 
-	serviceFixer := buildTestServiceFixer(subjectFilename)
-	addMissedMethodSignaturesInServiceInterface()
+	sf := buildTestServiceFixer(subjectFilename)
+	sf.addMissedMethodSignaturesInServiceInterface()
 
 	result, err := ioutil.ReadFile(subjectFilename)
 	if nil != err {
@@ -59,14 +60,14 @@ func TestServiceFixer_addMissedMethodImplementationsInPrivateServiceStruct(t *te
 	}
 
 	sf := buildTestServiceFixer(subjectFilename)
-	addMissedMethodImplementationsInPrivateServiceStruct()
+	sf.addMissedMethodImplementationsInPrivateServiceStruct()
 
 	result, err := ioutil.ReadFile(subjectFilename)
 	if nil != err {
 		t.Fatal(err)
 	}
 
-	svcNameLow := naming.GetServicePrivateImplStructName(serviceName)
+	svcNameLow := naming.GetServicePrivateImplStructName(sf.serviceName)
 	for _, action := range testServiceActions {
 		if !strings.Contains(string(result), "func (svc "+svcNameLow+") "+action+"(") {
 			t.Fatal("Struct " + svcNameLow + " method " + action + " is missed")

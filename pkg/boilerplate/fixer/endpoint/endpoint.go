@@ -1,15 +1,11 @@
 package endpoint
 
 import (
-	"fmt"
-	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
-	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"go/ast"
 	"log"
-	"os"
-	"text/template"
 
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
 )
@@ -162,33 +158,14 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
 
-	tmpl := template.Must(template.ParseFiles(ef.templatesRelDir + "template/endpoint/endpoint-builder-func.tmpl"))
-
 	for action := range ef.serviceActions {
 		builderFuncName := naming.GetEndpointBuilderFuncName(action)
 		builderFuncDecl := source.FindFuncDeclByName(ef.file, builderFuncName)
 		if nil == builderFuncDecl {
 
-			//buffer := &bytes.Buffer{}
-			tmpFilename := action + ".tmp"
-			fileTmp, err := os.Create(tmpFilename)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-			err = tmpl.Execute(fileTmp, struct{ ActionName string }{ActionName: action})
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+			// TODO: do magic
+			//ef.file.Decls = append(ef.file.Decls, builderFuncDecl)
 
-			_, fileAstTmp := fixer.OpenGolangSourceFile(tmpFilename)
-			funcDecl := source.FindFuncDeclByName(fileAstTmp, builderFuncName)
-
-			err = os.Remove(tmpFilename)
-			if nil != err {
-				log.Println("Can't remove file", tmpFilename)
-			}
-
-			ef.file.Decls = append(ef.file.Decls, funcDecl)
 			// TODO: move with comments!!!
 		}
 	}
