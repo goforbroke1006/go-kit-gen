@@ -3,6 +3,8 @@ package main
 import (
 	"flag"
 	"fmt"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/endpoint"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/service"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/project"
@@ -92,6 +94,9 @@ func main() {
 		protoFileRelDir = strings.Join(protoFileRelDirParts, "/")
 	}
 
+	_, file := fixer.OpenGolangSourceFile(protoGenFilename)
+	protoPbResAFI := iterator.NewAstFileIterator(file)
+
 	data := struct {
 		ProtoPackageName string
 		ServiceName      string
@@ -99,7 +104,7 @@ func main() {
 		ProtoFileRelDir  string
 		MethodNames      map[string]map[string]string
 	}{
-		ProtoPackageName: "pb", // FIXME: hardcode
+		ProtoPackageName: protoPbResAFI.GetPackageName(),
 		ServiceName:      *serviceName,
 		ServiceNameLow:   serviceNameLow,
 		ProtoFileRelDir:  protoFileRelDir,
