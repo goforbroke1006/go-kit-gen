@@ -5,6 +5,7 @@ import (
 	"github.com/goforbroke1006/go-kit-gen/pkg/filesystem"
 	"io/ioutil"
 	"log"
+	"os"
 	"strings"
 	"testing"
 )
@@ -37,7 +38,9 @@ func TestModelFixer_Fix(t *testing.T) {
 
 	fset, file := fixer.OpenGolangSourceFile(subjectFilename)
 
-	mf := NewModelFixer(file, testServiceName, testServiceActions)
+	mf := NewModelFixer(
+		os.Getenv("GOPATH")+"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer",
+		file, "pb", testServiceName, testServiceActions)
 	mf.Fix()
 
 	fixer.WriteSourceFile(subjectFilename, file, fset)

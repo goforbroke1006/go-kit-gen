@@ -2,31 +2,58 @@ package model
 
 import (
 	"go/ast"
+	"os"
+	"path/filepath"
+	"strings"
 
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 )
 
-func NewModelFixer(file *ast.File, serviceName string, serviceActions map[string]map[string]string) *ModelFixer {
+func NewModelFixer(
+	workingDir string,
+	file *ast.File,
+	pbPackage string,
+	serviceName string,
+	serviceActions map[string]map[string]string,
+) *ModelFixer {
+	endpointDir, _ := filepath.Abs(workingDir + "/endpoint")
+	endpointFullPackage := strings.TrimPrefix(endpointDir, os.Getenv("GOPATH"))
+
 	return &ModelFixer{
+		endpointPkg:    endpointFullPackage,
 		file:           file,
+		pbPackage:      pbPackage,
 		serviceName:    serviceName,
 		serviceActions: serviceActions,
 	}
 }
 
 type ModelFixer struct {
+	endpointPkg    string
 	file           *ast.File
+	pbPackage      string
 	serviceName    string
 	serviceActions map[string]map[string]string
 }
 
 func (mf ModelFixer) Fix() {
-	// TODO: import "pb" 		package from proto file
-	// TODO: import "endpoint" 	package from target project
-
 	afi := iterator.NewAstFileIterator(mf.file)
+
+	// TODO: import "pb" 		package from proto file
+
+	// TODO: import "endpoint" 	package from target project
+	//if !afi.HasImport(mf.pbPackage) {
+	//	mf.file.Imports = append(mf.file.Imports, &ast.ImportSpec{
+	//		Path: &ast.BasicLit{
+	//			ValuePos: 1000,
+	//			Kind:     token.STRING,
+	//			Value:    "\"" + mf.endpointPkg + "\"",
+	//		},
+	//	})
+	//}
+
 	apf := factory.AstPrimitiveFactory{}
 
 	for action := range mf.serviceActions {
@@ -37,8 +64,14 @@ func (mf ModelFixer) Fix() {
 			if nil == decoderFuncDecl {
 				decoderFuncDecl = apf.CreateFuncDecl(
 					decoderFuncName,
-					map[string]string{"_": "context.Context", "pbReq": ""}, // TODO: set real request type like pb.<ACTION>Request
-					map[string]string{"endpReq": "", "err": "error"},       // TODO: set real request type like endpoint.<ACTION>Response
+					map[string]string{
+						"_":     "context.Context",
+						"pbReq": mf.pbPackage + "." + action + "Request",
+					},
+					map[string]string{
+						"endpReq": "endpoint." + action + "Request",
+						"err":     "error",
+					},
 					[]ast.Expr{nil, nil},
 					nil, nil,
 				)
@@ -53,8 +86,14 @@ func (mf ModelFixer) Fix() {
 			if nil == encoderFuncDecl {
 				encoderFuncDecl = apf.CreateFuncDecl(
 					encoderFuncName,
-					map[string]string{"_": "context.Context", "endpResp": ""}, // TODO: set real request type like endpoint.<ACTION>Response
-					map[string]string{"pbResp": "", "err": "error"},           // TODO: set real request type like pb.<ACTION>Response
+					map[string]string{
+						"_":        "context.Context",
+						"endpResp": "endpoint." + action + "Response",
+					},
+					map[string]string{
+						"pbResp": mf.pbPackage + "." + action + "Response",
+						"err":    "error",
+					},
 					[]ast.Expr{nil, nil},
 					nil, nil,
 				)

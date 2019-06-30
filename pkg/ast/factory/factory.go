@@ -33,7 +33,7 @@ func (apb AstPrimitiveFactory) CreateStructDecl(
 func (apb AstPrimitiveFactory) CreateFuncDecl(
 	name string,
 	params map[string]string,
-	returns map[string]string,
+	returns map[string]string, // TODO: must be [][2]string because map doesn't allow create 2 eq keys, but I need it for empty param names
 	returnStmtVals []ast.Expr,
 	receiverName *string,
 	receiverTypeName *string,

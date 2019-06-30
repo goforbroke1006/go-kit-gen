@@ -16,6 +16,15 @@ func (afi AstFileIterator) GetPackageName() string {
 	return afi.file.Name.Name
 }
 
+func (afi AstFileIterator) HasImport(relPath string) bool {
+	for _, imp := range afi.file.Imports {
+		if relPath == imp.Path.Value {
+			return true
+		}
+	}
+	return false
+}
+
 func (afi AstFileIterator) GetFuncDecl(funcName string) *ast.FuncDecl {
 	for _, d := range afi.file.Decls {
 		switch d.(type) {

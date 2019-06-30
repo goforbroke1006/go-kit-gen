@@ -58,7 +58,7 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 			"resp": "",
 			"err":  "error",
 		},
-		[]interface{}{
+		[]ast.Expr{
 			apb.CreateCompositeLiteralExpr(
 				"SomeAwesomeHubEndpoints",
 				map[string]ast.Expr{
@@ -68,6 +68,7 @@ func TestSourceFileBuilder_CreateFunc(t *testing.T) {
 			),
 			nil,
 		},
+		nil, nil,
 	)
 
 	file.Decls = append(file.Decls, funcDecl)
