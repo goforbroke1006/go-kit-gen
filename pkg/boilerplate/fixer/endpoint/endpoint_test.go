@@ -1,12 +1,13 @@
 package endpoint
 
 import (
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"io/ioutil"
 	"log"
 	"os"
 	"strings"
 	"testing"
+
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 )
 
 var ef *EndpointFixer
@@ -43,13 +44,17 @@ func recreateTestSourceFile(sampleFilename, filename string) {
 	}
 }
 
-//func TestMain(m *testing.M) {
-//
-//	_, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
-//	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
+//func TestEndpointFixer_Fix(t *testing.T) {
 //	recreateTestSourceFile(endpointUnfinishedSampleFilename, experimentalSampleFilename)
 //
-//	os.Exit(m.Run())
+//	fset, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
+//
+//	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
+//	ef.Fix()
+//
+//	fixer.WriteSourceFile(experimentalSampleFilename, file, fset)
+//
+//	// TODO: assert
 //}
 
 func TestEndpointFixer_addMissedRequestModels(t *testing.T) {

@@ -19,10 +19,9 @@ func NewEndpointFixer(file *ast.File, serviceName string, serviceActions map[str
 }
 
 type EndpointFixer struct {
-	file            *ast.File
-	serviceName     string
-	serviceActions  map[string]map[string]string
-	templatesRelDir string
+	file           *ast.File
+	serviceName    string
+	serviceActions map[string]map[string]string
 }
 
 func (ef EndpointFixer) GetFile() *ast.File {
@@ -103,7 +102,6 @@ func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
 }
 
 func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
-	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
 	afi := iterator.NewAstFileIterator(ef.file)
 
 	endpointsFuncName := naming.GetMakeEndpointsFuncName(ef.serviceName)
@@ -120,9 +118,6 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 
 	apf := factory.AstPrimitiveFactory{}
 
-	//var missedActionsList []string
-
-	//{
 	for action := range ef.serviceActions {
 		endpointFieldName := naming.GetEndpointFieldName(action)
 
@@ -133,9 +128,8 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 				break
 			}
 		}
-		if !found {
-			//missedActionsList = append(missedActionsList, action)
 
+		if !found {
 			aclb.AddElement(
 				endpointFieldName,
 				apf.CreateMethodCallExpr(
@@ -145,25 +139,6 @@ func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 			)
 		}
 	}
-	//}
-
-	//{
-	//	exprs := funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts
-	//	for _, missedAction := range missedActionsList {
-	//		expr := &ast.KeyValueExpr{
-	//			Key: ast.NewIdent(naming.GetEndpointFieldName(missedAction)),
-	//			Value: &ast.CallExpr{
-	//				Fun: ast.NewIdent(naming.GetEndpointBuilderFuncName(missedAction)),
-	//				Args: []ast.Expr{
-	//					ast.NewIdent("svc"), // FIXME: hardcode
-	//				},
-	//			},
-	//		}
-	//		exprs = append(exprs, expr)
-	//	}
-	//	funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts = exprs
-	//}
-
 }
 
 func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
@@ -180,15 +155,13 @@ func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 				map[string]string{"": "endpoint.Endpoint"},
 				[]ast.Expr{
 					apf.CreateAnonFuncObjectDecl(
-						map[string]string{"ctx": "context.Context", "request": ""},
-						map[string]string{"response": "", "err": "error"},
+						map[string]string{"ctx": "context.Context", "req": ""},
+						map[string]string{"res": "", "err": "error"},
 						[]ast.Expr{nil, nil},
 					),
 				},
 			)
 			ef.file.Decls = append(ef.file.Decls, builderFuncDecl)
-			// TODO: move with comments!!!
-
 			log.Println("Create", builderFuncName, "function")
 		}
 	}
