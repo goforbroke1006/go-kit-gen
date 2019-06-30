@@ -35,6 +35,8 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 	params map[string]string,
 	returns map[string]string,
 	returnStmtVals []ast.Expr,
+	receiverName *string,
+	receiverTypeName *string,
 ) *ast.FuncDecl {
 	if nil != returnStmtVals && len(returnStmtVals) != len(returns) {
 		panic("return expr list must have same size like return declaration list")
@@ -46,27 +48,65 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 		NamePos: token.NoPos,
 	}
 
+	if nil != receiverTypeName {
+		if nil == receiverName || len(*receiverName) == 0 {
+			receiverName = new(string)
+			*receiverName = "self"
+		}
+
+		funcDecl.Recv = &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent(*receiverName)},
+					Type:  ast.NewIdent(*receiverTypeName),
+				},
+			},
+		}
+	}
+
 	funcDecl.Type = &ast.FuncType{
 		Params:  &ast.FieldList{List: util.MapToFieldList(params)},
 		Results: &ast.FieldList{List: util.MapToFieldList(returns)},
 	}
 
-	var returnEexprs []ast.Expr
-	for _, resVal := range returnStmtVals {
-		if nil == resVal {
-			returnEexprs = append(returnEexprs, ast.NewIdent("nil"))
-		} else {
-			returnEexprs = append(returnEexprs, resVal.(ast.Expr))
+	if len(returnStmtVals) > 0 {
+		var returnEexprs []ast.Expr
+		for _, resVal := range returnStmtVals {
+			if nil == resVal {
+				returnEexprs = append(returnEexprs, ast.NewIdent("nil"))
+			} else {
+				returnEexprs = append(returnEexprs, resVal.(ast.Expr))
+			}
+		}
+		funcDecl.Body = &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.ReturnStmt{
+					Results: returnEexprs,
+				},
+			},
 		}
 	}
-	funcDecl.Body = &ast.BlockStmt{
-		List: []ast.Stmt{
-			&ast.ReturnStmt{
-				Results: returnEexprs,
-			},
+
+	return funcDecl
+}
+
+func (apb AstPrimitiveFactory) CreateFuncSignatureExpr(
+	name string,
+	params map[string]string,
+	returns map[string]string,
+) *ast.Field {
+	funcDecl := &ast.Field{}
+	funcDecl.Names = []*ast.Ident{
+		{
+			Name:    name,
+			NamePos: token.NoPos,
 		},
 	}
-	funcDecl.Pos()
+
+	funcDecl.Type = &ast.FuncType{
+		Params:  &ast.FieldList{List: util.MapToFieldList(params)},
+		Results: &ast.FieldList{List: util.MapToFieldList(returns)},
+	}
 
 	return funcDecl
 }
@@ -111,12 +151,8 @@ func (apb AstPrimitiveFactory) CreateCompositeLiteralExpr(
 	structName string,
 	namesToValues map[string]ast.Expr,
 ) *ast.CompositeLit {
-	//tokFile := &token.File{}
-
 	ident := &ast.CompositeLit{}
 	ident.Type = ast.NewIdent(structName)
-
-	//headPos := tokFile.Position(ident.Type.End())
 
 	for name, value := range namesToValues {
 		keyIdent := ast.NewIdent(name)
@@ -124,12 +160,8 @@ func (apb AstPrimitiveFactory) CreateCompositeLiteralExpr(
 		initRow := &ast.KeyValueExpr{
 			Key:   keyIdent,
 			Value: value,
-			//Colon: srcFile.End(),
-			//Colon: tokFile..,
 		}
 		ident.Elts = append(ident.Elts, initRow)
-
-		//tokFile.AddLine(0)
 	}
 
 	return ident
@@ -139,7 +171,6 @@ func (apb AstPrimitiveFactory) CreateMethodCallExpr(
 	funcName string,
 	args []string,
 ) *ast.CallExpr {
-
 	var exprs []ast.Expr
 	for _, argName := range args {
 		exprs = append(exprs, ast.NewIdent(argName))

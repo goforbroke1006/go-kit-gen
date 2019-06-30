@@ -112,7 +112,7 @@ func main() {
 			old.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
 		} else {
 			//fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
-			serviceFixer := service.NewServiceFixer(serviceFilename, *serviceName, methodNames)
+			serviceFixer := service.NewServiceFixer(nil, *serviceName, methodNames)
 			serviceFixer.Fix()
 		}
 	}

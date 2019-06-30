@@ -28,14 +28,17 @@ func (afi AstFileIterator) GetFuncDecl(funcName string) *ast.FuncDecl {
 	return nil
 }
 
-func (afi AstFileIterator) GetStructFuncDecl(funcName string, recvStructType string) *ast.FuncDecl {
+func (afi AstFileIterator) GetStructFuncDecl(funcName string, recvStructTypeName string) *ast.FuncDecl {
 	for _, decl := range afi.file.Decls {
 		switch decl.(type) {
 		case *ast.FuncDecl:
 			if nil == decl.(*ast.FuncDecl).Recv {
 				continue
 			}
-			if recvStructType != decl.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
+			if nil == decl.(*ast.FuncDecl).Recv.List[0].Type {
+				continue
+			}
+			if recvStructTypeName != decl.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
 				continue
 			}
 			if funcName == decl.(*ast.FuncDecl).Name.Name {
@@ -118,16 +121,25 @@ func (asdi AstStructDeclIterator) GetProperties() []*ast.Field {
 
 func NewAstInterfaceTypeIterator(interfaceType *ast.GenDecl) *AstInterfaceTypeIterator {
 	return &AstInterfaceTypeIterator{
-		interfaceType: interfaceType,
+		infcDecl: interfaceType,
 	}
 }
 
 type AstInterfaceTypeIterator struct {
-	interfaceType *ast.GenDecl
+	infcDecl *ast.GenDecl
 }
 
 func (aiti AstInterfaceTypeIterator) GetMethodsFieldList() *ast.FieldList {
-	return aiti.interfaceType.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods
+	return aiti.infcDecl.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods
+}
+
+func (aiti AstInterfaceTypeIterator) GetMethod(methodName string) *ast.Field {
+	for _, m := range aiti.GetMethodsFieldList().List {
+		if methodName == m.Names[0].Name {
+			return m
+		}
+	}
+	return nil
 }
 
 // --------------------------------------------------

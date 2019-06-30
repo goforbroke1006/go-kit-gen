@@ -1,32 +1,27 @@
 package service
 
 import (
-	"fmt"
-	fixer2 "github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
-	"go/ast"
-	"go/token"
-	"log"
-	"os"
-	"text/template"
-
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/builder"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
+	"go/ast"
+	"log"
 )
 
-func NewServiceFixer(filename, serviceName string, serviceActions map[string]map[string]string) *ServiceFixer {
+func NewServiceFixer(file *ast.File, serviceName string, serviceActions map[string]map[string]string) *ServiceFixer {
 	return &ServiceFixer{
-		filename:        filename,
-		serviceName:     serviceName,
-		serviceActions:  serviceActions,
-		templatesRelDir: "./",
+		file:           file,
+		serviceName:    serviceName,
+		serviceActions: serviceActions,
 	}
 }
 
 type ServiceFixer struct {
-	filename        string
-	serviceName     string
-	serviceActions  map[string]map[string]string
-	templatesRelDir string
+	file           *ast.File
+	serviceName    string
+	serviceActions map[string]map[string]string
 }
 
 func (sf ServiceFixer) Fix() {
@@ -35,113 +30,84 @@ func (sf ServiceFixer) Fix() {
 }
 
 func (sf ServiceFixer) addMissedMethodSignaturesInServiceInterface() {
-	fs, file := fixer2.OpenGolangSourceFile(sf.filename)
+
+	afi := iterator.NewAstFileIterator(sf.file)
 
 	serviceInterfaceName := naming.GetServiceInterfaceName(sf.serviceName)
-	ifc := source.FindInterfaceByName(file, serviceInterfaceName)
-	if nil == ifc {
+	intfc := afi.GetInterfaceTypeSpec(serviceInterfaceName)
+	if nil == intfc {
 		log.Println("Cant find service interface", serviceInterfaceName)
 		return
 	}
 
-	ib := source.NewInterfaceBuilder(ifc)
-	actualMethodsList := ib.GetMethods()
+	aiti := iterator.NewAstInterfaceTypeIterator(intfc)
+	aib := builder.NewAstInterfaceBuilder(intfc)
+	apf := factory.AstPrimitiveFactory{}
 
 	for action := range sf.serviceActions {
-		found := false
-		for _, methodDecl := range actualMethodsList {
-			if action == methodDecl.Names[0].Name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			missedMethodDecl := &ast.Field{
-				Names: []*ast.Ident{
-					{
-						Name: action,
-						Obj:  &ast.Object{Kind: ast.Fun, Name: action},
-					},
-				},
-				Type: &ast.FuncType{
-					Params: &ast.FieldList{
-						List: []*ast.Field{
-							{
-								Names: []*ast.Ident{
-									{Name: "ctx", NamePos: token.NoPos},
-								},
-								Type: &ast.SelectorExpr{
-									X:   ast.NewIdent("context"),
-									Sel: ast.NewIdent("Context"),
-								},
-							},
-						},
-					},
-					Results: &ast.FieldList{
-						List: []*ast.Field{
-							{
-								Type: &ast.InterfaceType{
-									Methods: &ast.FieldList{},
-								},
-							},
-							{
-								Type: ast.NewIdent("error"),
-							},
-						},
-					},
-				},
-			}
-
-			ib.AppendMethod(missedMethodDecl)
+		methodDecl := aiti.GetMethod(action)
+		if nil == methodDecl {
+			funcSign := apf.CreateFuncSignatureExpr(
+				action,
+				map[string]string{"ctx": "context.Context"},
+				map[string]string{},
+			)
+			aib.AddFuncSignature(funcSign)
+			log.Println("Add", action, "method signature to", serviceInterfaceName, "interface")
 		}
 	}
-
-	fixer2.WriteSourceFile(sf.filename, file, fs)
 }
 
 func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
-	fs, file := fixer2.OpenGolangSourceFile(sf.filename)
+
 	implStructName := naming.GetServicePrivateImplStructName(sf.serviceName)
-	svcImplStructDecl := source.FindStructDeclByName(file, implStructName)
+	svcImplStructDecl := source.FindStructDeclByName(sf.file, implStructName)
 	if nil == svcImplStructDecl {
 		log.Println("Cant find service impl struct", implStructName)
 		return
 	}
 
-	actualMethodsList := source.FindStructMethods(file, implStructName)
+	afi := iterator.NewAstFileIterator(sf.file)
+	apf := factory.AstPrimitiveFactory{}
 
-	tmpl := template.Must(template.ParseFiles(sf.templatesRelDir + "template/service/service-impl-struct-sample.tmpl"))
+	//tmpl := template.Must(template.ParseFiles(sf.templatesRelDir + "template/service/service-impl-struct-sample.tmpl"))
 
+	recvName := "svc"
 	for action := range sf.serviceActions {
-		found := false
-		for _, m := range actualMethodsList {
-			if action == m.Name.Name {
-				found = true
-				break
-			}
-		}
-		if !found {
-			tmpFilename := action + ".tmp"
-			fileTmp, err := os.Create(tmpFilename)
-			if nil != err {
-				fmt.Println(err.Error())
-			}
-			err = tmpl.Execute(fileTmp, struct {
-				StructName string
-				MethodName string
-			}{StructName: implStructName, MethodName: action})
-			if nil != err {
-				fmt.Println(err.Error())
-			}
+		svcMethod := afi.GetStructFuncDecl(action, implStructName)
+		if nil == svcMethod {
+			svcMethod := apf.CreateFuncDecl(
+				action,
+				map[string]string{"ctx": "context.Context"},
+				map[string]string{"res": "", "err": "error"},
+				[]ast.Expr{nil, nil},
+				&recvName, &implStructName,
+			)
+			sf.file.Decls = append(sf.file.Decls, svcMethod)
 
-			_, fileAstTmp := fixer2.OpenGolangSourceFile(tmpFilename)
-			missedFuncDecl := source.FindFuncDeclByName(fileAstTmp, action)
+			log.Println("Create", "(", implStructName, ")", action, "func")
 
-			file.Decls = append(file.Decls, missedFuncDecl)
-			err = os.Remove(tmpFilename)
-			if nil != err {
-				log.Println("Can't remove file", tmpFilename)
-			}
+			//tmpFilename := action + ".tmp"
+			//fileTmp, err := os.Create(tmpFilename)
+			//if nil != err {
+			//	fmt.Println(err.Error())
+			//}
+			//err = tmpl.Execute(fileTmp, struct {
+			//	StructName string
+			//	MethodName string
+			//}{StructName: implStructName, MethodName: action})
+			//if nil != err {
+			//	fmt.Println(err.Error())
+			//}
+			//
+			//_, fileAstTmp := fixer2.OpenGolangSourceFile(tmpFilename)
+			//missedFuncDecl := source.FindFuncDeclByName(fileAstTmp, action)
+			//
+			//file.Decls = append(file.Decls, missedFuncDecl)
+			//err = os.Remove(tmpFilename)
+			//if nil != err {
+			//	log.Println("Can't remove file", tmpFilename)
+			//}
 
 			//missedFuncDecl := &ast.FuncDecl{
 			//	Recv: &ast.FieldList{
@@ -166,6 +132,4 @@ func (sf ServiceFixer) addMissedMethodImplementationsInPrivateServiceStruct() {
 			// TODO:
 		}
 	}
-
-	fixer2.WriteSourceFile(sf.filename, file, fs)
 }

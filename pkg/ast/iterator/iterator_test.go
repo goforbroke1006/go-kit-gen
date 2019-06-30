@@ -43,6 +43,6 @@ func TestAstIterator_GetInterfaceTypeSpec(t *testing.T) {
 	_, file := fixer.OpenGolangSourceFile("testdata/enpoint.tmp.go")
 	iter := NewAstFileIterator(file)
 	if got := iter.GetInterfaceTypeSpec("TestInterface"); nil == got {
-		t.Errorf("AstFileIterator.GetStructDecl() = nil, want interfaceType")
+		t.Errorf("AstFileIterator.GetStructDecl() = nil, want infcDecl")
 	}
 }

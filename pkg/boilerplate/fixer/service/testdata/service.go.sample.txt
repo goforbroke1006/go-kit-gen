@@ -22,6 +22,7 @@ func (svc someAwesomeHubService) MethodTwo(ctx context.Context) (interface{}, er
 	return nil, nil
 }
 
-func NewSomeAwesomeHubService() FakeDataService {
-	return fakeDataService{}
+func NewSomeAwesomeHubService() SomeAwesomeHubService {
+	return &someAwesomeHubService{
+	}
 }

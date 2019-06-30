@@ -160,6 +160,7 @@ func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 						[]ast.Expr{nil, nil},
 					),
 				},
+				nil,
 			)
 			ef.file.Decls = append(ef.file.Decls, builderFuncDecl)
 			log.Println("Create", builderFuncName, "function")
