@@ -117,7 +117,13 @@ func TestEndpointFixer_addMissedPropertiesInEndpointsStruct(t *testing.T) {
 }
 
 func TestEndpointFixer_addMissedPropertyInitializationInMakeEndpointsFunc(t *testing.T) {
+	recreateTestSourceFile(endpointUnfinishedSampleFilename, experimentalSampleFilename)
+	fset, file := fixer.OpenGolangSourceFile(experimentalSampleFilename)
+	ef = NewEndpointFixer(file, testServiceName, testServiceActions)
+
 	ef.addMissedPropertyInitializationInMakeEndpointsFunc()
+
+	fixer.WriteSourceFile(experimentalSampleFilename, file, fset)
 
 	result, err := ioutil.ReadFile(experimentalSampleFilename)
 	if nil != err {

@@ -8,7 +8,6 @@ import (
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
-	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
 )
 
 func NewEndpointFixer(file *ast.File, serviceName string, serviceActions map[string]map[string]string) *EndpointFixer {
@@ -105,57 +104,75 @@ func (ef EndpointFixer) addMissedPropertiesInEndpointsStruct() {
 
 func (ef EndpointFixer) addMissedPropertyInitializationInMakeEndpointsFunc() {
 	//fs, file := fixer.OpenGolangSourceFile(ef.filename)
+	afi := iterator.NewAstFileIterator(ef.file)
+
 	endpointsFuncName := naming.GetMakeEndpointsFuncName(ef.serviceName)
-	funcDecl := source.FindFuncDeclByName(ef.file, endpointsFuncName)
+	funcDecl := afi.GetFuncDecl(endpointsFuncName)
+
 	if nil == funcDecl {
 		log.Println("Can't find make endpoints func", endpointsFuncName)
 		return
 	}
 
-	var missedActionsList []string
+	afdi := iterator.NewAstFuncDeclIterator(funcDecl)
+	litValueOfEndpointStruct := afdi.GetReturnSmtm().Results[0].(*ast.CompositeLit)
+	aclb := builder.NewAstCompositeLitBuilder(litValueOfEndpointStruct)
 
-	{
-		for action := range ef.serviceActions {
-			found := false
-			for _, initVal := range funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts {
-				if initVal.(*ast.KeyValueExpr).Key.(*ast.Ident).Name == naming.GetEndpointFieldName(action) {
-					found = true
-					break
-				}
-			}
-			if !found {
-				missedActionsList = append(missedActionsList, action)
+	apf := factory.AstPrimitiveFactory{}
+
+	//var missedActionsList []string
+
+	//{
+	for action := range ef.serviceActions {
+		endpointFieldName := naming.GetEndpointFieldName(action)
+
+		found := false
+		for _, initVal := range funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts {
+			if endpointFieldName == initVal.(*ast.KeyValueExpr).Key.(*ast.Ident).Name {
+				found = true
+				break
 			}
 		}
-	}
+		if !found {
+			//missedActionsList = append(missedActionsList, action)
 
-	{
-		exprs := funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts
-		for _, missedAction := range missedActionsList {
-			expr := &ast.KeyValueExpr{
-				Key: ast.NewIdent(naming.GetEndpointFieldName(missedAction)),
-				//Colon: exprs[0].(*ast.KeyValueExpr).Colon,
-				Value: &ast.CallExpr{
-					Fun: ast.NewIdent(naming.GetEndpointBuilderFuncName(missedAction)),
-					Args: []ast.Expr{
-						ast.NewIdent("svc"), // FIXME: hardcode
-					},
-				},
-			}
-			exprs = append(exprs, expr)
+			aclb.AddElement(
+				endpointFieldName,
+				apf.CreateMethodCallExpr(
+					naming.GetEndpointBuilderFuncName(action),
+					[]string{"svc"},
+				),
+			)
 		}
-		funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts = exprs
 	}
+	//}
 
-	//fixer.WriteSourceFile(ef.filename, file, fs)
+	//{
+	//	exprs := funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts
+	//	for _, missedAction := range missedActionsList {
+	//		expr := &ast.KeyValueExpr{
+	//			Key: ast.NewIdent(naming.GetEndpointFieldName(missedAction)),
+	//			Value: &ast.CallExpr{
+	//				Fun: ast.NewIdent(naming.GetEndpointBuilderFuncName(missedAction)),
+	//				Args: []ast.Expr{
+	//					ast.NewIdent("svc"), // FIXME: hardcode
+	//				},
+	//			},
+	//		}
+	//		exprs = append(exprs, expr)
+	//	}
+	//	funcDecl.Body.List[0].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts = exprs
+	//}
+
 }
 
 func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 	apf := factory.AstPrimitiveFactory{}
+	afi := iterator.NewAstFileIterator(ef.file)
 
 	for action := range ef.serviceActions {
 		builderFuncName := naming.GetEndpointBuilderFuncName(action)
-		builderFuncDecl := source.FindFuncDeclByName(ef.file, builderFuncName)
+		builderFuncDecl := afi.GetFuncDecl(builderFuncName)
 		if nil == builderFuncDecl {
 			builderFuncDecl := apf.CreateFuncDecl(
 				builderFuncName,

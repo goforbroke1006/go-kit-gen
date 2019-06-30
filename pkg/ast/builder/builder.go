@@ -31,3 +31,23 @@ func (asb AstStructBuilder) AddProperty(name, typeName string) {
 	propsList = append(propsList, propertyNew)
 	asb.structDecl.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType).Fields.List = propsList
 }
+
+// --------------------------------------------------
+
+func NewAstCompositeLitBuilder(lit *ast.CompositeLit) *AstCompositeLitBuilder {
+	return &AstCompositeLitBuilder{
+		lit: lit,
+	}
+}
+
+type AstCompositeLitBuilder struct {
+	lit *ast.CompositeLit
+}
+
+func (aclb AstCompositeLitBuilder) AddElement(propName string, propValue ast.Expr) {
+	expr := &ast.KeyValueExpr{
+		Key:   ast.NewIdent(propName),
+		Value: propValue,
+	}
+	aclb.lit.Elts = append(aclb.lit.Elts, expr)
+}

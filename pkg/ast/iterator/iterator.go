@@ -131,3 +131,35 @@ func (aiti AstInterfaceTypeIterator) GetMethodsFieldList() *ast.FieldList {
 }
 
 // --------------------------------------------------
+
+func NewAstCompositeLitIterator(lit *ast.CompositeLit) *AstCompositeLitIterator {
+	return &AstCompositeLitIterator{
+		lit: lit,
+	}
+}
+
+type AstCompositeLitIterator struct {
+	lit *ast.CompositeLit
+}
+
+func (acli AstCompositeLitIterator) GetElements() []ast.Expr {
+	return acli.lit.Elts
+}
+
+// --------------------------------------------------
+
+func NewAstFuncDeclIterator(funcDecl *ast.FuncDecl) *AstFuncDeclIterator {
+	return &AstFuncDeclIterator{
+		funcDecl: funcDecl,
+	}
+}
+
+type AstFuncDeclIterator struct {
+	funcDecl *ast.FuncDecl
+}
+
+func (afdi AstFuncDeclIterator) GetReturnSmtm() *ast.ReturnStmt {
+	return afdi.funcDecl.Body.List[0].(*ast.ReturnStmt)
+}
+
+// --------------------------------------------------
