@@ -1,27 +1,66 @@
 package model
 
 import (
-	fixer2 "github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
+	"go/ast"
+
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 )
 
-func NewModelFixed(filename, serviceName string, serviceActions []string) *ModelFixed {
-	return &ModelFixed{
-		filename:        filename,
-		serviceName:     serviceName,
-		serviceActions:  serviceActions,
-		templatesRelDir: "./",
+func NewModelFixer(file *ast.File, serviceName string, serviceActions map[string]map[string]string) *ModelFixer {
+	return &ModelFixer{
+		file:           file,
+		serviceName:    serviceName,
+		serviceActions: serviceActions,
 	}
 }
 
-type ModelFixed struct {
-	filename        string
-	serviceName     string
-	serviceActions  []string
-	templatesRelDir string
+type ModelFixer struct {
+	file           *ast.File
+	serviceName    string
+	serviceActions map[string]map[string]string
 }
 
-func (mf ModelFixed) Fix() {
-	fs, astFile := fixer2.OpenGolangSourceFile(mf.filename)
-	// TODO:
-	fixer2.WriteSourceFile(mf.filename, astFile, fs)
+func (mf ModelFixer) Fix() {
+	// TODO: import "pb" 		package from proto file
+	// TODO: import "endpoint" 	package from target project
+
+	afi := iterator.NewAstFileIterator(mf.file)
+	apf := factory.AstPrimitiveFactory{}
+
+	for action := range mf.serviceActions {
+		{
+			decoderFuncName := naming.GetDecodePbToEndpRequestMethodName(action)
+			decoderFuncDecl := afi.GetFuncDecl(decoderFuncName)
+
+			if nil == decoderFuncDecl {
+				decoderFuncDecl = apf.CreateFuncDecl(
+					decoderFuncName,
+					map[string]string{"_": "context.Context", "pbReq": ""}, // TODO: set real request type like pb.<ACTION>Request
+					map[string]string{"endpReq": "", "err": "error"},       // TODO: set real request type like endpoint.<ACTION>Response
+					[]ast.Expr{nil, nil},
+					nil, nil,
+				)
+				mf.file.Decls = append(mf.file.Decls, decoderFuncDecl)
+			}
+		}
+
+		{
+			encoderFuncName := naming.GetEncodeEndpToPbResponseMethodName(action)
+			encoderFuncDecl := afi.GetFuncDecl(encoderFuncName)
+
+			if nil == encoderFuncDecl {
+				encoderFuncDecl = apf.CreateFuncDecl(
+					encoderFuncName,
+					map[string]string{"_": "context.Context", "endpResp": ""}, // TODO: set real request type like endpoint.<ACTION>Response
+					map[string]string{"pbResp": "", "err": "error"},           // TODO: set real request type like pb.<ACTION>Response
+					[]ast.Expr{nil, nil},
+					nil, nil,
+				)
+				mf.file.Decls = append(mf.file.Decls, encoderFuncDecl)
+			}
+		}
+	}
+
 }
