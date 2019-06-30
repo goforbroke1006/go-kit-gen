@@ -37,11 +37,11 @@ func MapToFieldList(decls map[string]string) []*ast.Field {
 			paramDecl.Names = []*ast.Ident{
 				ast.NewIdent(varName),
 			}
-		} else {
+		} /*else {
 			paramDecl.Names = []*ast.Ident{
 				ast.NewIdent("_"),
 			}
-		}
+		}*/
 
 		paramDecl.Type = StringToAstType(typeName)
 

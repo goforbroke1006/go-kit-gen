@@ -162,8 +162,11 @@ func (ef EndpointFixer) addMissedEndpointBuilderFunc() {
 				map[string]string{"svc": ""},
 				map[string]string{"": "endpoint.Endpoint"},
 				[]ast.Expr{
-					nil,
-					//apf.CreateAnonFuncObjectDecl(map[string]string{}, map[string]string{}, []ast.Expr{}),
+					apf.CreateAnonFuncObjectDecl(
+						map[string]string{"ctx": "context.Context", "request": ""},
+						map[string]string{"response": "", "err": "error"},
+						[]ast.Expr{nil, nil},
+					),
 				},
 			)
 			ef.file.Decls = append(ef.file.Decls, builderFuncDecl)

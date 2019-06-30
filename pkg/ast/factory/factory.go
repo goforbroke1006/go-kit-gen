@@ -68,18 +68,6 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 	}
 	funcDecl.Pos()
 
-	// TODO:
-
-	//cg := &ast.CommentGroup{
-	//	List: []*ast.Comment{
-	//		{
-	//			Slash: funcDecl.Pos() + 100,
-	//			Text: "// TODO: implement me",
-	//		},
-	//	},
-	//}
-	//apb.file.Comments = append(apb.file.Comments, cg)
-
 	return funcDecl
 }
 
@@ -88,8 +76,34 @@ func (apb AstPrimitiveFactory) CreateAnonFuncObjectDecl(
 	returns map[string]string,
 	returnStmtVals []ast.Expr,
 ) *ast.FuncLit {
+	if nil != returnStmtVals && len(returnStmtVals) != len(returns) {
+		panic("return expr list must have same size like return declaration list")
+	}
+
 	funcLit := &ast.FuncLit{}
-	// TODO: implement me
+
+	funcLit.Type = &ast.FuncType{
+		Params:  &ast.FieldList{List: util.MapToFieldList(params)},
+		Results: &ast.FieldList{List: util.MapToFieldList(returns)},
+	}
+
+	var returnEexprs []ast.Expr
+	for _, resVal := range returnStmtVals {
+		if nil == resVal {
+			returnEexprs = append(returnEexprs, ast.NewIdent("nil"))
+		} else {
+			returnEexprs = append(returnEexprs, resVal.(ast.Expr))
+		}
+	}
+
+	funcLit.Body = &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ReturnStmt{
+				Results: returnEexprs,
+			},
+		},
+	}
+
 	return funcLit
 }
 
