@@ -1,5 +1,5 @@
 *.tmp
 *.tmp.go
-*.testdata.go
+!*.testdata.go
 
 .idea
