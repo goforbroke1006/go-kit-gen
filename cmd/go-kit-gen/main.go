@@ -7,6 +7,7 @@ import (
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/endpoint"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/service"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/transport"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/project"
 	"github.com/goforbroke1006/go-kit-gen/pkg/old"
 	"log"
@@ -16,15 +17,21 @@ import (
 )
 
 var (
-	workingDir  = flag.String("working-dir", "./", "Define project root dir")
-	protoPath   = flag.String("proto-path", "", "Services and messages blueprints *.proto file location")
-	protoFile   = flag.String("proto-file", "", "Services and messages blueprints *.proto file location")
-	serviceName = flag.String("service-name", "", "Service name")
+	workingDir    = flag.String("working-dir", "./", "Define project root dir")
+	protoPath     = flag.String("proto-path", "", "Services and messages blueprints *.proto file location")
+	protoFile     = flag.String("proto-file", "", "Services and messages blueprints *.proto file location")
+	serviceName   = flag.String("service-name", "", "Service name")
+	transportType = flag.String("transport", "", "Select transport type (grpc, http)")
 )
 
 func init() {
 	flag.Parse()
 }
+
+const (
+	TransportTypeGRPC = "grpc"
+	TransportTypeHTTP = "http"
+)
 
 func main() {
 
@@ -150,4 +157,32 @@ func main() {
 		}
 	}
 
+	processTransportSourceFile(workingDirPath+"/transport/transport.go", *serviceName, methodNames)
+
+}
+
+func processTransportSourceFile(
+	filename string,
+	serviceName string,
+	serviceStructure map[string]map[string]string,
+) {
+	{
+		fileSet, file := fixer.OpenGolangSourceFile(filename)
+
+		switch *transportType {
+		case TransportTypeGRPC:
+			transportFixer := transport.NewGRPCTransportFixer(file, serviceName)
+			for mName, mArgs := range serviceStructure {
+				transportFixer.FixServerImplStructField(mName)
+				transportFixer.FixServerImplStructMethod(mName, mArgs)
+			}
+			// TODO;
+			break
+		case TransportTypeHTTP:
+			// TODO:
+			break
+		}
+
+		fixer.WriteSourceFile(filename, file, fileSet)
+	}
 }

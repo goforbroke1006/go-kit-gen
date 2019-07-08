@@ -1,6 +1,9 @@
 package naming
 
-import "strings"
+import (
+	"github.com/goforbroke1006/go-kit-gen/pkg/string_util"
+	"strings"
+)
 
 func GetServiceInterfaceName(serviceName string) string {
 	return serviceName + "Service"
@@ -42,4 +45,10 @@ func GetDecodePbToEndpRequestMethodName(actionName string) string {
 
 func GetEncodeEndpToPbResponseMethodName(actionName string) string {
 	return "EncodeGRPC" + actionName + "Response"
+}
+
+//
+
+func GetTransportStructName(serviceName, transportType string) string {
+	return strings.ToLower(transportType) + string_util.FirstLetterToUpperCase(serviceName) + "Server"
 }
