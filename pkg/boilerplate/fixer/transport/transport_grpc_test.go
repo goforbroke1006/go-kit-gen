@@ -4,13 +4,37 @@ import (
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 	"github.com/goforbroke1006/go-kit-gen/pkg/filesystem"
+	"io/ioutil"
 	"log"
+	"strings"
 	"testing"
 
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/builder"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 )
+
+func TestNewGRPCTransportFixer(t *testing.T) {
+	const subjectFilename = "./testdata/result/TestNewGRPCTransportFixer.tmp.go"
+
+	if err := filesystem.CopyFileToFile("./testdata/transport_sample_empty.go", subjectFilename); nil != err {
+		log.Fatal(err)
+	}
+
+	fileSet, file := fixer.OpenGolangSourceFile(subjectFilename)
+	_ = NewGRPCTransportFixer(file, "SomeAwesomeHub")
+	fixer.WriteSourceFile(subjectFilename, file, fileSet)
+
+	result, err := ioutil.ReadFile(subjectFilename)
+	if nil != err {
+		t.Fatal(err)
+	}
+	want := "type grpcSomeAwesomeHubServer struct"
+	if !strings.Contains(string(result), want) {
+		t.Errorf("NewGRPCTransportFixer(), want %v", want)
+	}
+
+}
 
 func Test_grpcTransportFixer_FixServerImplStructField(t *testing.T) {
 	const serviceName = "SomeAwesomeHub"

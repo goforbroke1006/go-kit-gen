@@ -13,6 +13,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
@@ -35,28 +36,35 @@ const (
 
 func main() {
 
-	// TODO: validate args/opts
+	var err error
 
-	var workingDirPath string
-	if strings.HasPrefix(*workingDir, "/") {
-		workingDirPath = *workingDir
-	} else {
-		appWorkingDir, err := os.Getwd()
-		if nil != err {
-			log.Fatal(err)
-		}
-		workingDirPath = appWorkingDir + "/" + *workingDir
+	if *workingDir, err = filepath.Abs(*workingDir); nil != err {
+		log.Fatal(err)
 	}
 
+	// TODO: validate args/opts
+
+	//var workingDirPath string
+	//if strings.HasPrefix(*workingDir, "/") {
+	//	workingDirPath = *workingDir
+	//} else {
+	//	appWorkingDir, err := os.Getwd()
+	//	if nil != err {
+	//		log.Fatal(err)
+	//	}
+	//	workingDirPath = appWorkingDir + "/" + *workingDir
+	//}
+
 	if len(*protoPath) == 0 {
-		dir, err := os.Getwd()
-		if nil != err {
+		if *protoPath, err = filepath.Abs(*protoPath); nil != err {
 			log.Fatal(err)
 		}
-		*protoPath = dir
+	} else {
+		*protoPath = *workingDir
 	}
 
 	if len(*protoFile) == 0 {
+		// TODO: check file exists
 		log.Fatal("--proto-file is required")
 	}
 	if len(*serviceName) == 0 {
@@ -66,10 +74,10 @@ func main() {
 	command := exec.Command(
 		"protoc",
 		fmt.Sprintf("--proto_path=%s", *protoPath),
-		fmt.Sprintf("--go_out=plugins=grpc:%s", workingDirPath),
+		fmt.Sprintf("--go_out=plugins=grpc:%s", *workingDir),
 		*protoFile,
 	)
-	err := command.Start()
+	err = command.Start()
 	if nil != err {
 		log.Fatal(err)
 	}
@@ -79,9 +87,9 @@ func main() {
 		log.Printf("Command finished with error: %v", err)
 	}
 
-	project.InitProjectDirs(workingDirPath)
+	project.InitProjectDirs(*workingDir)
 
-	protoGenFilename := workingDirPath + "/" + strings.TrimSuffix(*protoFile, "proto") + "pb.go"
+	protoGenFilename := *workingDir + "/" + strings.TrimSuffix(*protoFile, "proto") + "pb.go"
 	interfaces := old.ExtractServerInterface(protoGenFilename, *serviceName)
 
 	//fmt.Println(itf.Name.Name)
@@ -119,7 +127,7 @@ func main() {
 	}
 
 	{
-		serviceFilename := workingDirPath + "/service/service.go"
+		serviceFilename := *workingDir + "/service/service.go"
 		if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
 			old.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
 		} else {
@@ -130,7 +138,7 @@ func main() {
 	}
 
 	{
-		endpointFilename := workingDirPath + "/endpoint/endpoint.go"
+		endpointFilename := *workingDir + "/endpoint/endpoint.go"
 		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
 			old.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
 		} else {
@@ -140,7 +148,7 @@ func main() {
 	}
 
 	{
-		modelFilename := workingDirPath + "/model/model.go"
+		modelFilename := *workingDir + "/model/model.go"
 		if _, err := os.Stat(modelFilename); os.IsNotExist(err) {
 			old.CreateNewFromTemplate(modelFilename, "template/model.tmpl", data)
 		} else {
@@ -148,16 +156,16 @@ func main() {
 		}
 	}
 
-	{
-		transportFilename := workingDirPath + "/transport/transport.go"
-		if _, err := os.Stat(transportFilename); os.IsNotExist(err) {
-			old.CreateNewFromTemplate(transportFilename, "template/transport.tmpl", data)
-		} else {
-			fmt.Println("File", transportFilename, "already exists! Please edit it manually!")
-		}
-	}
+	//{
+	//	transportFilename := *workingDir + "/transport/transport.go"
+	//	if _, err := os.Stat(transportFilename); os.IsNotExist(err) {
+	//		old.CreateNewFromTemplate(transportFilename, "template/transport.tmpl", data)
+	//	} else {
+	//		fmt.Println("File", transportFilename, "already exists! Please edit it manually!")
+	//	}
+	//}
 
-	processTransportSourceFile(workingDirPath+"/transport/transport.go", *serviceName, methodNames)
+	processTransportSourceFile(*workingDir+"/transport/transport.go", *serviceName, methodNames)
 
 }
 

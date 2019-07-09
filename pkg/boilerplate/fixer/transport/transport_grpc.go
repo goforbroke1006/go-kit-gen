@@ -13,13 +13,22 @@ import (
 
 func NewGRPCTransportFixer(file *ast.File, serviceName string) GRPCTransportFixer {
 	afi := iterator.NewAstFileIterator(file)
-	structDecl := afi.GetStructDecl(naming.GetTransportStructName(serviceName, "grpc"))
+	structName := naming.GetTransportStructName(serviceName, "grpc")
+	structDecl := afi.GetStructDecl(structName)
+
+	apf := &factory.AstPrimitiveFactory{}
+
+	if nil == structDecl {
+		structDecl = apf.CreateStructDecl(structName, map[string]string{})
+		file.Decls = append(file.Decls, structDecl)
+	}
+
 	return &grpcTransportFixer{
 		file: file,
 		decl: structDecl,
 		asdi: iterator.NewAstStructDeclIterator(structDecl),
 		asb:  builder.NewAstStructBuilder(structDecl),
-		apf:  &factory.AstPrimitiveFactory{},
+		apf:  apf,
 	}
 }
 
