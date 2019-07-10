@@ -18,7 +18,7 @@ func (afi AstFileIterator) GetPackageName() string {
 
 func (afi AstFileIterator) HasImport(relPath string) bool {
 	for _, imp := range afi.file.Imports {
-		if relPath == imp.Path.Value {
+		if "\""+relPath+"\"" == imp.Path.Value {
 			return true
 		}
 	}

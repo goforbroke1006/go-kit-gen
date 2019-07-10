@@ -36,6 +36,27 @@ func TestNewGRPCTransportFixer(t *testing.T) {
 
 }
 
+func Test_grpcTransportFixer_AllMethods(t *testing.T) {
+	const subjectFilename = "./testdata/result/AllMethods.tmp.go"
+	if err := filesystem.CopyFileToFile("./testdata/transport_sample_empty.go", subjectFilename); nil != err {
+		log.Fatal(err)
+	}
+
+	fileSet, file := fixer.OpenGolangSourceFile(subjectFilename)
+	//tf := NewGRPCTransportFixer(file, "SomeAwesomeHub")
+	//tf.FixServerImplStructField()
+	fixer.WriteSourceFile(subjectFilename, file, fileSet)
+
+	result, err := ioutil.ReadFile(subjectFilename)
+	if nil != err {
+		t.Fatal(err)
+	}
+	want := "type grpcSomeAwesomeHubServer struct"
+	if !strings.Contains(string(result), want) {
+		t.Errorf("NewGRPCTransportFixer(), want %v", want)
+	}
+}
+
 func Test_grpcTransportFixer_FixServerImplStructField(t *testing.T) {
 	const serviceName = "SomeAwesomeHub"
 	type args struct {
@@ -69,7 +90,7 @@ func Test_grpcTransportFixer_FixServerImplStructField(t *testing.T) {
 				asb:  builder.NewAstStructBuilder(structDecl),
 				apf:  &factory.AstPrimitiveFactory{},
 			}
-			if err := tf.FixServerImplStructField(tt.args.actionName); (err != nil) != tt.wantErr {
+			if _, err := tf.FixServerImplStructField(tt.args.actionName); (err != nil) != tt.wantErr {
 				t.Errorf("grpcTransportFixer.FixServerImplStructField() error = %v, wantErr %v", err, tt.wantErr)
 			}
 

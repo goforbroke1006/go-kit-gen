@@ -1,0 +1,42 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package pb;
+
+service SomeAwesomeHub {
+    rpc MethodOne (MethodOneRequest) returns (MethodOneResponse);
+    rpc MethodTwo (MethodTwoRequest) returns (MethodTwoResponse);
+    rpc MethodThree (MethodThreeRequest) returns (MethodThreeResponse);
+    rpc SayHello (SayHelloRequest) returns (SayHelloResponse);
+}
+
+message MethodOneRequest {
+}
+message MethodOneResponse {
+    string fieldOne = 1;
+    string err = 2;
+}
+
+message MethodTwoRequest {
+}
+message MethodTwoResponse {
+    string fieldOne = 1;
+    repeated string fieldsTwo = 2;
+    string err = 3;
+}
+
+message MethodThreeRequest {
+}
+message MethodThreeResponse {
+    string fieldTwo = 1;
+    uint64 fieldThree = 2;
+    string err = 3;
+}
+
+message SayHelloRequest {
+}
+message SayHelloResponse {
+    string fieldHello = 1;
+    string err = 2;
+}

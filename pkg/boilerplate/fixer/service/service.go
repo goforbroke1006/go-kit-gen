@@ -1,13 +1,14 @@
 package service
 
 import (
+	"go/ast"
+	"log"
+
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/builder"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/factory"
 	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
 	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
 	"github.com/goforbroke1006/go-kit-gen/pkg/old/source"
-	"go/ast"
-	"log"
 )
 
 func NewServiceFixer(file *ast.File, serviceName string, serviceActions map[string]map[string]string) *ServiceFixer {

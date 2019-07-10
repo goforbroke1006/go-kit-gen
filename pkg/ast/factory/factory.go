@@ -90,6 +90,66 @@ func (apb AstPrimitiveFactory) CreateFuncDecl(
 	return funcDecl
 }
 
+func (apb AstPrimitiveFactory) CreateFuncDecl2(
+	name string,
+	params []*ast.Field,
+	returns []*ast.Field,
+	returnStmtVals []ast.Expr,
+	receiverName *string,
+	receiverTypeName *string,
+) *ast.FuncDecl {
+	if nil != returnStmtVals && len(returnStmtVals) != len(returns) {
+		panic("return expr list must have same size like return declaration list")
+	}
+
+	funcDecl := &ast.FuncDecl{}
+	funcDecl.Name = &ast.Ident{
+		Name:    name,
+		NamePos: token.NoPos,
+	}
+
+	if nil != receiverTypeName {
+		if nil == receiverName || len(*receiverName) == 0 {
+			receiverName = new(string)
+			*receiverName = "self"
+		}
+
+		funcDecl.Recv = &ast.FieldList{
+			List: []*ast.Field{
+				{
+					Names: []*ast.Ident{ast.NewIdent(*receiverName)},
+					Type:  ast.NewIdent(*receiverTypeName),
+				},
+			},
+		}
+	}
+
+	funcDecl.Type = &ast.FuncType{
+		Params:  &ast.FieldList{List: params},
+		Results: &ast.FieldList{List: returns},
+	}
+
+	if len(returnStmtVals) > 0 {
+		var returnEexprs []ast.Expr
+		for _, resVal := range returnStmtVals {
+			if nil == resVal {
+				returnEexprs = append(returnEexprs, ast.NewIdent("nil"))
+			} else {
+				returnEexprs = append(returnEexprs, resVal.(ast.Expr))
+			}
+		}
+		funcDecl.Body = &ast.BlockStmt{
+			List: []ast.Stmt{
+				&ast.ReturnStmt{
+					Results: returnEexprs,
+				},
+			},
+		}
+	}
+
+	return funcDecl
+}
+
 func (apb AstPrimitiveFactory) CreateFuncSignatureExpr(
 	name string,
 	params map[string]string,

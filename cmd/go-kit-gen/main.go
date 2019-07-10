@@ -2,162 +2,148 @@ package main
 
 import (
 	"flag"
-	"fmt"
-	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/endpoint"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/service"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer/transport"
-	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/project"
-	"github.com/goforbroke1006/go-kit-gen/pkg/old"
 	"log"
-	"os"
-	"os/exec"
 	"path/filepath"
 	"strings"
+
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/iterator"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/fixer"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/naming"
+	"github.com/goforbroke1006/go-kit-gen/pkg/boilerplate/project"
 )
 
 var (
-	workingDir    = flag.String("working-dir", "./", "Define project root dir")
-	protoPath     = flag.String("proto-path", "", "Services and messages blueprints *.proto file location")
-	protoFile     = flag.String("proto-file", "", "Services and messages blueprints *.proto file location")
-	serviceName   = flag.String("service-name", "", "Service name")
-	transportType = flag.String("transport", "", "Select transport type (grpc, http)")
-)
+	argWorkingDir    = flag.String("working-dir", "./", "Define project root dir")
+	argProtoResFile  = flag.String("proto-res-file", "", "*.pb.go file location")
+	argServiceName   = flag.String("service-name", "", "Service name")
+	argTransportType = flag.String("transport-type", "", "Select transport type (grpc, http)")
 
-func init() {
-	flag.Parse()
-}
+	argEndpointFile  = flag.String("file-endpoint", "./endpoint/endpoint.go", "Endpoint file location related to selected working dir")
+	argServiceFile   = flag.String("file-service", "./service/service.go", "Service file location related to selected working dir")
+	argTransportFile = flag.String("file-transport", "./transport/transport_<argTransportType>.go", "Transport file location related to selected working dir")
+)
 
 const (
 	TransportTypeGRPC = "grpc"
 	TransportTypeHTTP = "http"
 )
 
-func main() {
+func init() {
+	flag.Parse()
 
 	var err error
 
-	if *workingDir, err = filepath.Abs(*workingDir); nil != err {
+	if *argWorkingDir, err = filepath.Abs(*argWorkingDir); nil != err {
 		log.Fatal(err)
 	}
 
-	// TODO: validate args/opts
-
-	//var workingDirPath string
-	//if strings.HasPrefix(*workingDir, "/") {
-	//	workingDirPath = *workingDir
-	//} else {
-	//	appWorkingDir, err := os.Getwd()
-	//	if nil != err {
+	//if len(*argProtoPath) == 0 {
+	//	if *argProtoPath, err = filepath.Abs(*argProtoPath); nil != err {
 	//		log.Fatal(err)
 	//	}
-	//	workingDirPath = appWorkingDir + "/" + *workingDir
+	//} else {
+	//	*argProtoPath = *argWorkingDir
 	//}
 
-	if len(*protoPath) == 0 {
-		if *protoPath, err = filepath.Abs(*protoPath); nil != err {
-			log.Fatal(err)
-		}
-	} else {
-		*protoPath = *workingDir
-	}
-
-	if len(*protoFile) == 0 {
+	if len(*argProtoResFile) == 0 {
 		// TODO: check file exists
 		log.Fatal("--proto-file is required")
 	}
-	if len(*serviceName) == 0 {
+	if !strings.HasPrefix(*argProtoResFile, "/") {
+		if *argProtoResFile, err = filepath.Abs(*argWorkingDir + "/" + *argProtoResFile); nil != err {
+			log.Fatal(err.Error())
+		}
+	}
+
+	if len(*argServiceName) == 0 {
 		log.Fatal("--service-name is required")
 	}
 
-	command := exec.Command(
-		"protoc",
-		fmt.Sprintf("--proto_path=%s", *protoPath),
-		fmt.Sprintf("--go_out=plugins=grpc:%s", *workingDir),
-		*protoFile,
-	)
-	err = command.Start()
-	if nil != err {
-		log.Fatal(err)
-	}
-	log.Printf("Waiting for command to finish...")
-	err = command.Wait()
-	if nil != err {
-		log.Printf("Command finished with error: %v", err)
+	if *argTransportType != TransportTypeGRPC && *argTransportType != TransportTypeHTTP {
+		log.Fatal("unexpected --file-transport value")
 	}
 
-	project.InitProjectDirs(*workingDir)
+	if !strings.HasPrefix(*argEndpointFile, "/") {
+		if *argEndpointFile, err = filepath.Abs(*argWorkingDir + "/" + *argEndpointFile); nil != err {
+			log.Fatal(err.Error())
+		}
+	}
 
-	protoGenFilename := *workingDir + "/" + strings.TrimSuffix(*protoFile, "proto") + "pb.go"
-	interfaces := old.ExtractServerInterface(protoGenFilename, *serviceName)
+	if !strings.HasPrefix(*argServiceFile, "/") {
+		if *argServiceFile, err = filepath.Abs(*argWorkingDir + "/" + *argServiceFile); nil != err {
+			log.Fatal(err.Error())
+		}
+	}
+
+	*argTransportFile = strings.Replace(*argTransportFile, "<argTransportType>", *argTransportType, -1)
+	if !strings.HasPrefix(*argTransportFile, "/") {
+		if *argTransportFile, err = filepath.Abs(*argWorkingDir + "/" + *argTransportFile); nil != err {
+			log.Fatal(err.Error())
+		}
+	}
+}
+
+func main() {
+
+	//output, err := shell.Execute("protoc", "--proto_path=%s"+*argProtoPath, "--go_out=plugins=grpc:%s"+*argWorkingDir, *argProtoFile, )
+	//if nil != err {
+	//	log.Fatalln(err.Error())
+	//}
+	//log.Println(output)
+
+	project.InitProjectDirs(*argWorkingDir)
+
+	//protoGenFilename := *argWorkingDir + "/" + strings.TrimSuffix(*argProtoFile, "proto") + "pb.go"
+	_, pbGoFile := fixer.OpenGolangSourceFile(*argProtoResFile)
+	protoPbResAfi := iterator.NewAstFileIterator(pbGoFile)
+
+	serviceInterfaceName := naming.GetServiceInterfaceInPb(*argServiceName)
+	serverInterface := protoPbResAfi.GetInterfaceTypeSpec(serviceInterfaceName)
+
+	serverInterfaceAiti := iterator.NewAstInterfaceTypeIterator(serverInterface)
 
 	//fmt.Println(itf.Name.Name)
-	var methodNames = map[string]map[string]string{}
-	methods := old.ExtractMethodsFromType(interfaces)
-	for _, f := range methods {
-		methodNames[f.Names[0].Name] = nil
-	}
+	//var methodNames = map[string]map[string]string{}
+	//methods := old.ExtractMethodsFromType(interfaces)
+	//for _, f := range methods {
+	//	methodNames[f.Names[0].Name] = nil
+	//}
 
-	//serviceName := strings.TrimSuffix(interfaces.Name.Name, "Server")
-	serviceNameLow := strings.ToLower((*serviceName)[0:1]) + (*serviceName)[1:]
-
-	var protoFileRelDir string
-	{
-		protoFileRelDirParts := strings.Split(*protoFile, "/")
-		protoFileRelDirParts = protoFileRelDirParts[:len(protoFileRelDirParts)-1]
-		protoFileRelDir = strings.Join(protoFileRelDirParts, "/")
-	}
-
-	_, file := fixer.OpenGolangSourceFile(protoGenFilename)
-	protoPbResAFI := iterator.NewAstFileIterator(file)
-
-	data := struct {
-		ProtoPackageName string
-		ServiceName      string
-		ServiceNameLow   string
-		ProtoFileRelDir  string
-		MethodNames      map[string]map[string]string
-	}{
-		ProtoPackageName: protoPbResAFI.GetPackageName(),
-		ServiceName:      *serviceName,
-		ServiceNameLow:   serviceNameLow,
-		ProtoFileRelDir:  protoFileRelDir,
-		MethodNames:      methodNames,
-	}
-
-	{
-		serviceFilename := *workingDir + "/service/service.go"
-		if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
-			old.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
-		} else {
-			//fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
-			serviceFixer := service.NewServiceFixer(nil, *serviceName, methodNames)
-			serviceFixer.Fix()
-		}
-	}
-
-	{
-		endpointFilename := *workingDir + "/endpoint/endpoint.go"
-		if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
-			old.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
-		} else {
-			endpointFixer := endpoint.NewEndpointFixer(nil, *serviceName, methodNames)
-			endpointFixer.Fix()
-		}
-	}
-
-	{
-		modelFilename := *workingDir + "/model/model.go"
-		if _, err := os.Stat(modelFilename); os.IsNotExist(err) {
-			old.CreateNewFromTemplate(modelFilename, "template/model.tmpl", data)
-		} else {
-			fmt.Println("File", modelFilename, "already exists! Please edit it manually!")
-		}
-	}
+	//_, pbGoFile := fixer.OpenGolangSourceFile(protoGenFilename)
+	//protoPbResAFI := iterator.NewAstFileIterator(pbGoFile)
 
 	//{
-	//	transportFilename := *workingDir + "/transport/transport.go"
+	//	serviceFilename := *argWorkingDir + "/service/service.go"
+	//	if _, err := os.Stat(serviceFilename); os.IsNotExist(err) {
+	//		old.CreateNewFromTemplate(serviceFilename, "template/service.tmpl", data)
+	//	} else {
+	//		//fmt.Println("File", serviceFilename, "already exists! Please edit it manually!")
+	//		serviceFixer := service.NewServiceFixer(nil, *argServiceName, methodNames)
+	//		serviceFixer.Fix()
+	//	}
+	//}
+	//
+	//{
+	//	endpointFilename := *argWorkingDir + "/endpoint/endpoint.go"
+	//	if _, err := os.Stat(endpointFilename); os.IsNotExist(err) {
+	//		old.CreateNewFromTemplate(endpointFilename, "template/endpoint.tmpl", data)
+	//	} else {
+	//		endpointFixer := endpoint.NewEndpointFixer(nil, *argServiceName, methodNames)
+	//		endpointFixer.Fix()
+	//	}
+	//}
+	//
+	//{
+	//	modelFilename := *argWorkingDir + "/model/model.go"
+	//	if _, err := os.Stat(modelFilename); os.IsNotExist(err) {
+	//		old.CreateNewFromTemplate(modelFilename, "template/model.tmpl", data)
+	//	} else {
+	//		fmt.Println("File", modelFilename, "already exists! Please edit it manually!")
+	//	}
+	//}
+
+	//{
+	//	transportFilename := *argWorkingDir + "/transport/transport.go"
 	//	if _, err := os.Stat(transportFilename); os.IsNotExist(err) {
 	//		old.CreateNewFromTemplate(transportFilename, "template/transport.tmpl", data)
 	//	} else {
@@ -165,32 +151,64 @@ func main() {
 	//	}
 	//}
 
-	processTransportSourceFile(*workingDir+"/transport/transport.go", *serviceName, methodNames)
+	/*{
+		if _, err := os.Stat(*argTransportFile); os.IsNotExist(err) {
+			if _, err := os.OpenFile(*argTransportFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0660); nil != err {
+				log.Fatal(err.Error())
+			}
+			file := &ast.File{}
+			builder.NewAstFileBuilder(file).SetPackage("transport") // TODO: hard-code
+			fileSet := token.NewFileSet()
+			fixer.WriteSourceFile(*argTransportFile, file, fileSet)
+		}
 
-}
-
-func processTransportSourceFile(
-	filename string,
-	serviceName string,
-	serviceStructure map[string]map[string]string,
-) {
-	{
-		fileSet, file := fixer.OpenGolangSourceFile(filename)
-
-		switch *transportType {
+		fileSet, file := fixer.OpenGolangSourceFile(*argTransportFile)
+		switch *argTransportType {
 		case TransportTypeGRPC:
-			transportFixer := transport.NewGRPCTransportFixer(file, serviceName)
-			for mName, mArgs := range serviceStructure {
-				transportFixer.FixServerImplStructField(mName)
-				transportFixer.FixServerImplStructMethod(mName, mArgs)
+
+			transportFileAfi := iterator.NewAstFileIterator(file)
+			transportFileAfb := builder.NewAstFileBuilder(file)
+
+			if !transportFileAfi.HasImport("context") {
+				transportFileAfb.AddImport("context") // TODO: hard-code
+			}
+
+			if !transportFileAfi.HasImport("github.com/go-kit/kit/transport/grpc") {
+				transportFileAfb.AddImport("github.com/go-kit/kit/transport/grpc") // TODO: hard-code
+			}
+
+			transportFixer := transport.NewGRPCTransportFixer(file, *argServiceName)
+			for _, mArgs := range serverInterfaceAiti.GetMethodsFieldList().List {
+				actionName := mArgs.Names[0].Name
+				if name, err := transportFixer.FixServerImplStructField(actionName); nil != err {
+					log.Println("warn", err.Error())
+				} else {
+					log.Println("info", "field ", name, "was created")
+				}
+
+				argFields := mArgs.Type.(*ast.FuncType).Params.List
+				argFields[1].Type.(*ast.StarExpr).X.(*ast.Ident).Name = protoPbResAfi.GetPackageName() + "." + argFields[1].Type.(*ast.StarExpr).X.(*ast.Ident).Name
+
+				retFields := mArgs.Type.(*ast.FuncType).Results.List
+				retFields[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name = protoPbResAfi.GetPackageName() + "." + retFields[0].Type.(*ast.StarExpr).X.(*ast.Ident).Name
+
+				if err := transportFixer.FixServerImplStructMethod(actionName, argFields, retFields); nil != err {
+					log.Println("warn", err.Error())
+				}
+
+				if err := transportFixer.FixDecodeMethod(actionName, argFields, retFields); nil != err {
+					log.Println("warn", err.Error())
+				}
 			}
 			// TODO;
 			break
 		case TransportTypeHTTP:
 			// TODO:
 			break
+		default:
+			log.Fatalln("unexpected transport type, can't find fixer for", *argTransportType)
 		}
+		fixer.WriteSourceFile(*argTransportFile, file, fileSet)
+	}*/
 
-		fixer.WriteSourceFile(filename, file, fileSet)
-	}
 }

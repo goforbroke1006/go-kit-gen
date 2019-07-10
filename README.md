@@ -8,10 +8,10 @@ Tool for generating gokit-based microservice project structure with proto-3 file
 
 ```bash
 go-kit-gen \
-    --working-dir=/home/user/go/src/github.com/goforbroke1006/test-svc \
-    --proto-path=/home/user/go/src/github.com/goforbroke1006/test-svc \
-    --proto-file=pb/api/v1/test-service.proto \
-    --service-name=SomeAwesomeHub
+    --working-dir=/home/scherkesov/go/src/github.com/goforbroke1006/sport-archive-svc \
+    --proto-res-file=api/pb/v1/sport-archive-svc.pb.go \
+    --service-name=SportArchive \
+    --transport-type=grpc
 ```
 
 ### Project structure

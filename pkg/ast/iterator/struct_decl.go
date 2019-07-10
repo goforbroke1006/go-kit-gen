@@ -17,11 +17,20 @@ func (asdi AstStructDeclIterator) GetName() string {
 }
 
 func (asdi AstStructDeclIterator) GetProperties() []*ast.Field {
+	if nil == asdi.structDecl.Specs[0].(*ast.TypeSpec).Name.Obj {
+		return nil
+	}
 	return asdi.structDecl.Specs[0].(*ast.TypeSpec).Name.Obj.Decl.(*ast.TypeSpec).Type.(*ast.StructType).Fields.List
 }
 
 func (asdi AstStructDeclIterator) HasProperty(name string) bool {
-	for _, field := range asdi.GetProperties() {
+	properties := asdi.GetProperties()
+
+	if nil == properties {
+		return false
+	}
+
+	for _, field := range properties {
 		if name == field.Names[0].Name {
 			return true
 		}

@@ -5,6 +5,14 @@ import (
 	"strings"
 )
 
+// pb
+
+func GetServiceInterfaceInPb(serviceName string) string {
+	return string_util.FirstLetterToUpperCase(serviceName) + "Server"
+}
+
+// endpoint
+
 func GetServiceInterfaceName(serviceName string) string {
 	return serviceName + "Service"
 }
@@ -40,11 +48,11 @@ func GetEndpointBuilderFuncName(actionName string) string {
 // model
 
 func GetDecodePbToEndpRequestMethodName(actionName string) string {
-	return "DecodeGRPC" + actionName + "Request"
+	return "decodeGRPC" + actionName + "Request"
 }
 
 func GetEncodeEndpToPbResponseMethodName(actionName string) string {
-	return "EncodeGRPC" + actionName + "Response"
+	return "encodeGRPC" + actionName + "Response"
 }
 
 //
