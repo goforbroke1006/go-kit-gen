@@ -3,3 +3,5 @@
 !*.testdata.go
 
 .idea
+
+test/testdata/pkg/**/*.go
