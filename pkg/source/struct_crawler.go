@@ -5,14 +5,31 @@ import (
 )
 
 type StructCrawler struct {
+	file *ast.File
+	decl *ast.GenDecl
 }
 
 func (s StructCrawler) GetName() string {
-	return "" // TODO: implement me
+	return s.decl.Specs[0].(*ast.TypeSpec).Name.Name
 }
 
-func NewStructCrawler() *StructCrawler {
-	return &StructCrawler{}
+func (s StructCrawler) HasMethod(name string) bool {
+	for _, d := range s.file.Decls {
+		if _, ok := d.(*ast.FuncDecl); !ok {
+			continue
+		}
+		if name == d.(*ast.FuncDecl).Name.Name && s.GetName() == d.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
+			return true
+		}
+	}
+	return false
+}
+
+func NewStructCrawler(file *ast.File, decl *ast.GenDecl) *StructCrawler {
+	return &StructCrawler{
+		file: file,
+		decl: decl,
+	}
 }
 
 type InterfaceCrawler struct {

@@ -21,9 +21,9 @@ const serviceName = "SomeAwesomeHub"
 func TestServiceFixer(t *testing.T) {
 	serviceFilename, _ := filepath.Abs("../testdata/pkg/service/service.go")
 
-	//if err := os.Remove(serviceFilename); nil != err {
-	//	t.Log(err)
-	//}
+	if err := os.Remove(serviceFilename); nil != err {
+		t.Log(err)
+	}
 
 	fileSet := token.NewFileSet()
 	serviceFileNode, err := parser.ParseFile(fileSet, serviceFilename, nil, parser.ParseComments)
@@ -35,7 +35,7 @@ func TestServiceFixer(t *testing.T) {
 	crawler.SetPackageIfNotDefined("service")
 
 	srvGen := generator.NewServiceInterfaceGenerator(crawler)
-	serviceInterfaceName, err := srvGen.CreateInterfaceIfNotExists(serviceName)
+	_, err = srvGen.CreateInterfaceIfNotExists(serviceName)
 
 	//srvMethodFakeArgs := [][2]string{{"ctx", "context.Context"}, {"agr1", "interface{}"}}
 	//srvMethodFakeRets := [][2]string{{"", "interface{}"}, {"", "error"}}
@@ -46,15 +46,14 @@ func TestServiceFixer(t *testing.T) {
 	_ = srvGen.CreateMethodSignatureIfNotExists(serviceName, "SayHello")
 
 	srvImplGen := generator.NewServicePrivateImplGenerator(crawler)
-	servImplName, err := srvImplGen.CreateEmptyStructIfNotExists(serviceName)
+	_, err = srvImplGen.CreateEmptyStructIfNotExists(serviceName)
 
 	srvImplGen.CreateMethodDeclIfNotExists(serviceName, "MethodOne")
 	srvImplGen.CreateMethodDeclIfNotExists(serviceName, "MethodTwo")
 	srvImplGen.CreateMethodDeclIfNotExists(serviceName, "MethodThree")
 	srvImplGen.CreateMethodDeclIfNotExists(serviceName, "SayHello")
 
-	constructorGenerator := generator.NewConstructorGenerator()
-	constructorGenerator.CreateServiceConstructorMethod(serviceInterfaceName, servImplName)
+	generator.CreateServiceConstructor(crawler, serviceName)
 
 	if file, err := os.OpenFile(serviceFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		t.Fatal(err.Error())
@@ -82,8 +81,8 @@ func TestServiceFixer(t *testing.T) {
 		`func \([\w]+ someAwesomeHubService\) MethodThree\(ctx context.Context`,
 		`func \([\w]+ someAwesomeHubService\) SayHello\(ctx context.Context`,
 
-		`func NewSomeAwesomeHub\(\) SomeAwesomeHub {`,
-		`return &someAwesomeHub{}`,
+		`func NewSomeAwesomeHubService\(\) SomeAwesomeHubService {`,
+		`return &someAwesomeHubService{}`,
 	}
 
 	for _, m := range matches {

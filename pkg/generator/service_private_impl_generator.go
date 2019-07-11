@@ -41,6 +41,10 @@ func (s servicePrivateImplGenerator) CreateEmptyStructIfNotExists(pbGoServiceNam
 func (s servicePrivateImplGenerator) CreateMethodDeclIfNotExists(pbGoServiceName, pbGoActionName string) {
 	name := string_util.FirstLetterToLowerCase(pbGoServiceName) + "Service"
 
+	if s.crawler.GetStruct(name).HasMethod(pbGoActionName) {
+		return
+	}
+
 	funcDecl := &ast.FuncDecl{}
 	funcDecl.Name = &ast.Ident{
 		Name:    pbGoActionName,
@@ -89,4 +93,44 @@ func NewServicePrivateImplGenerator(crawler *source.FileCrawler) ServicePrivateI
 	return &servicePrivateImplGenerator{
 		crawler: crawler,
 	}
+}
+
+func CreateServiceConstructor(crawler *source.FileCrawler, pbServiceName string) {
+	name := "New" + string_util.FirstLetterToUpperCase(pbServiceName) + "Service"
+
+	if nil != crawler.GetFunc(name) {
+		return
+	}
+
+	intfcName := string_util.FirstLetterToUpperCase(pbServiceName) + "Service"
+	implName := string_util.FirstLetterToLowerCase(pbServiceName) + "Service"
+
+	funcDecl := &ast.FuncDecl{}
+	funcDecl.Name = &ast.Ident{
+		Name:    name,
+		NamePos: token.NoPos,
+	}
+	funcDecl.Type = &ast.FuncType{
+		Params: &ast.FieldList{
+			List: []*ast.Field{},
+		},
+		Results: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("", intfcName),
+			},
+		},
+	}
+	funcDecl.Body = &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.CompositeLit{
+						Type: ast.NewIdent("&" + implName), // TODO: workaround
+					},
+				},
+			},
+		},
+	}
+
+	crawler.PushBack(funcDecl)
 }
