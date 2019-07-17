@@ -22,6 +22,10 @@ func (c *FileCrawler) SetPackageIfNotDefined(packageName string) {
 
 func (c *FileCrawler) GetStruct(name string) *StructCrawler {
 	for _, d := range c.file.Decls {
+		if _, ok := d.(*ast.GenDecl); !ok {
+			continue
+		}
+
 		if _, ok := d.(*ast.GenDecl).Specs[0].(*ast.TypeSpec); !ok {
 			continue
 		}
@@ -40,6 +44,10 @@ func (c *FileCrawler) GetStruct(name string) *StructCrawler {
 
 func (c *FileCrawler) GetInterface(name string) *InterfaceCrawler {
 	for _, d := range c.file.Decls {
+		if _, ok := d.(*ast.GenDecl); !ok {
+			continue
+		}
+
 		if _, ok := d.(*ast.GenDecl).Specs[0].(*ast.TypeSpec); !ok {
 			continue
 		}

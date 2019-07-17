@@ -36,6 +36,10 @@ type InterfaceCrawler struct {
 	intfDecl *ast.GenDecl
 }
 
+func (crawler InterfaceCrawler) GetMethods() []*ast.Field {
+	return crawler.intfDecl.Specs[0].(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods.List
+}
+
 func (crawler InterfaceCrawler) HasMethod(name string) bool {
 	list := crawler.intfDecl.Specs[0].(*ast.TypeSpec).Type.(*ast.InterfaceType).Methods.List
 	for _, m := range list {

@@ -2,7 +2,14 @@ package main
 
 import (
 	"flag"
+	"github.com/goforbroke1006/go-kit-gen/pkg/generator"
+	"github.com/goforbroke1006/go-kit-gen/pkg/source"
+	"go/ast"
+	"go/parser"
+	"go/printer"
+	"go/token"
 	"log"
+	"os"
 	"path/filepath"
 	"strings"
 )
@@ -13,8 +20,8 @@ var (
 	argServiceName   = flag.String("service-name", "", "Service name")
 	argTransportType = flag.String("transport-type", "", "Select transport type (grpc, http)")
 
-	argEndpointFile  = flag.String("file-endpoint", "./endpoint/endpoint.go", "Endpoint file location related to selected working dir")
 	argServiceFile   = flag.String("file-service", "./service/service.go", "Service file location related to selected working dir")
+	argEndpointFile  = flag.String("file-endpoint", "./endpoint/endpoint.go", "Endpoint file location related to selected working dir")
 	argTransportFile = flag.String("file-transport", "./transport/transport_<argTransportType>.go", "Transport file location related to selected working dir")
 )
 
@@ -71,5 +78,62 @@ func init() {
 }
 
 func main() {
-	//
+	fileSet := token.NewFileSet()
+	protoResFileNode, err := parser.ParseFile(fileSet, *argProtoResFile, nil, parser.ParseComments)
+	if err != nil {
+		log.Fatal(err.Error())
+	}
+	protoCrawler := source.NewFileCrawler(protoResFileNode)
+	actions := protoCrawler.GetInterface(*argServiceName + "Server").GetMethods()
+
+	var actionsNames []string
+	for _, a := range actions {
+		actionsNames = append(actionsNames, a.Names[0].Name)
+	}
+
+	fixServiceFile(*argServiceFile, *argServiceName, actionsNames)
+}
+
+func fixServiceFile(serviceFilename, serviceName string, actionNames []string) {
+	fileSet := token.NewFileSet()
+	serviceFileNode, err := parser.ParseFile(fileSet, serviceFilename, nil, parser.ParseComments)
+	if err != nil {
+		serviceFileNode = &ast.File{}
+	}
+
+	crawler := source.NewFileCrawler(serviceFileNode)
+	crawler.SetPackageIfNotDefined("service")
+
+	srvGen := generator.NewServiceInterfaceGenerator(crawler)
+	_, err = srvGen.CreateInterfaceIfNotExists(serviceName)
+	if nil != err {
+		log.Fatalln(err.Error())
+	}
+
+	for _, an := range actionNames {
+		err = srvGen.CreateMethodSignatureIfNotExists(serviceName, an)
+		if nil != err {
+			log.Fatalln(err.Error())
+		}
+	}
+
+	srvImplGen := generator.NewServicePrivateImplGenerator(crawler)
+	_, err = srvImplGen.CreateEmptyStructIfNotExists(serviceName)
+	if nil != err {
+		log.Fatalln(err.Error())
+	}
+
+	for _, an := range actionNames {
+		srvImplGen.CreateMethodDeclIfNotExists(serviceName, an)
+	}
+
+	generator.CreateServiceConstructor(crawler, serviceName)
+
+	if file, err := os.OpenFile(serviceFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
+		log.Fatal(err.Error())
+	} else {
+		if err = printer.Fprint(file, fileSet, serviceFileNode); nil != err {
+			log.Fatalln(err)
+		}
+	}
 }

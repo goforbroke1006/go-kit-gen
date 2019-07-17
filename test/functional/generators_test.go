@@ -37,9 +37,6 @@ func TestServiceFixer(t *testing.T) {
 	srvGen := generator.NewServiceInterfaceGenerator(crawler)
 	_, err = srvGen.CreateInterfaceIfNotExists(serviceName)
 
-	//srvMethodFakeArgs := [][2]string{{"ctx", "context.Context"}, {"agr1", "interface{}"}}
-	//srvMethodFakeRets := [][2]string{{"", "interface{}"}, {"", "error"}}
-
 	_ = srvGen.CreateMethodSignatureIfNotExists(serviceName, "MethodOne")
 	_ = srvGen.CreateMethodSignatureIfNotExists(serviceName, "MethodTwo")
 	_ = srvGen.CreateMethodSignatureIfNotExists(serviceName, "MethodThree")
