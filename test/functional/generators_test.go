@@ -102,23 +102,23 @@ func TestEndpointFixer(t *testing.T) {
 	}
 
 	fileSet := token.NewFileSet()
-	serviceFileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
+	fileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
 	if err != nil {
 		//log.Fatal(err)
-		serviceFileNode = &ast.File{}
+		fileNode = &ast.File{}
 	}
 
-	crawler := source.NewFileCrawler(serviceFileNode)
+	crawler := source.NewFileCrawler(fileNode)
 	crawler.SetPackageIfNotDefined("endpoint")
 
 	// TODO: magic here
-	eptsStructGen := generator.NewEndpointsStructGenerator()
+	eptsStructGen := generator.NewEndpointsStructGenerator(crawler)
 	eptsStructGen.CreateEndpointStructIfNotExists(serviceName)
 
-	eptsStructGen.CreateEndpointStructField("MethodOne")
-	eptsStructGen.CreateEndpointStructField("MethodTwo")
-	eptsStructGen.CreateEndpointStructField("MethodThree")
-	eptsStructGen.CreateEndpointStructField("SayHello")
+	_ = eptsStructGen.CreateEndpointStructField(serviceName, "MethodOne")
+	_ = eptsStructGen.CreateEndpointStructField(serviceName, "MethodTwo")
+	_ = eptsStructGen.CreateEndpointStructField(serviceName, "MethodThree")
+	_ = eptsStructGen.CreateEndpointStructField(serviceName, "SayHello")
 
 	eptsStructGen.CreateRequestStruct("MethodOne")
 	eptsStructGen.CreateResponseStruct("MethodOne")
@@ -143,7 +143,7 @@ func TestEndpointFixer(t *testing.T) {
 	if file, err := os.OpenFile(endpointFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		t.Fatal(err.Error())
 	} else {
-		if err = printer.Fprint(file, fileSet, serviceFileNode); nil != err {
+		if err = printer.Fprint(file, fileSet, fileNode); nil != err {
 			t.Fatal(err)
 		}
 	}

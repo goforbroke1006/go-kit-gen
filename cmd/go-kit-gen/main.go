@@ -92,6 +92,7 @@ func main() {
 	}
 
 	fixServiceFile(*argServiceFile, *argServiceName, actionsNames)
+	fixEndpointFile(*argEndpointFile, *argServiceName, actionsNames)
 }
 
 func fixServiceFile(serviceFilename, serviceName string, actionNames []string) {
@@ -133,6 +134,45 @@ func fixServiceFile(serviceFilename, serviceName string, actionNames []string) {
 		log.Fatal(err.Error())
 	} else {
 		if err = printer.Fprint(file, fileSet, serviceFileNode); nil != err {
+			log.Fatalln(err)
+		}
+	}
+}
+
+func fixEndpointFile(endpointFilename, serviceName string, actionNames []string) {
+	fileSet := token.NewFileSet()
+	fileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
+	if nil != err {
+		log.Fatalln(err)
+	}
+
+	crawler := source.NewFileCrawler(fileNode)
+	crawler.SetPackageIfNotDefined("endpoint")
+
+	structGen := generator.NewEndpointsStructGenerator(crawler)
+	structGen.CreateEndpointStructIfNotExists(serviceName)
+
+	for _, a := range actionNames {
+		structGen.CreateEndpointStructField(serviceName, a)
+	}
+
+	for _, a := range actionNames {
+		structGen.CreateRequestStruct(a)
+	}
+
+	for _, a := range actionNames {
+		structGen.CreateMakeEndpointFunc(a)
+	}
+
+	structGen.CreateConstructorIfNotExists()
+	for _, a := range actionNames {
+		structGen.SetFieldInContructor(a)
+	}
+
+	if file, err := os.OpenFile(endpointFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
+		log.Fatal(err.Error())
+	} else {
+		if err = printer.Fprint(file, fileSet, endpointFilename); nil != err {
 			log.Fatalln(err)
 		}
 	}

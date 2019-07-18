@@ -1,6 +1,7 @@
 package source
 
 import (
+	"github.com/goforbroke1006/go-kit-gen/pkg/ast/util"
 	"go/ast"
 )
 
@@ -23,6 +24,17 @@ func (s StructCrawler) HasMethod(name string) bool {
 		}
 	}
 	return false
+}
+
+func (s StructCrawler) AddProperty(name, _type string) {
+	spec := s.decl.Specs[0].(*ast.TypeSpec)
+	f := &ast.Field{
+		Names: []*ast.Ident{
+			ast.NewIdent(name),
+		},
+		Type: util.StringToAstType(_type),
+	}
+	spec.Type.(*ast.StructType).Fields.List = append(spec.Type.(*ast.StructType).Fields.List, f)
 }
 
 func NewStructCrawler(file *ast.File, decl *ast.GenDecl) *StructCrawler {
