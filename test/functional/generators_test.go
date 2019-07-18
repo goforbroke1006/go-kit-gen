@@ -97,9 +97,9 @@ func TestServiceFixer(t *testing.T) {
 func TestEndpointFixer(t *testing.T) {
 	endpointFilename, _ := filepath.Abs("../testdata/pkg/endpoint/endpoint.go")
 
-	//if err := os.Remove(endpointFilename); nil != err {
-	//	t.Log(err)
-	//}
+	if err := os.Remove(endpointFilename); nil != err {
+		t.Log(err)
+	}
 
 	fileSet := token.NewFileSet()
 	fileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
@@ -199,35 +199,35 @@ func TestEndpointFixer(t *testing.T) {
 func TestGRPCTransportFixer(t *testing.T) {
 	transportFilename, _ := filepath.Abs("../testdata/pkg/transport/transport_grpc.go")
 
-	if err := os.Remove(transportFilename); nil != err {
-		t.Log(err)
-	}
+	//if err := os.Remove(transportFilename); nil != err {
+	//	t.Log(err)
+	//}
 
 	fileSet := token.NewFileSet()
 	serviceFileNode, err := parser.ParseFile(fileSet, transportFilename, nil, parser.ParseComments)
 	if err != nil {
-		//log.Fatal(err)
 		serviceFileNode = &ast.File{}
 	}
 
 	crawler := source.NewFileCrawler(serviceFileNode)
 	crawler.SetPackageIfNotDefined("transport")
+	crawler.AddImportIfNotExists("context", "")
+	crawler.AddImportIfNotExists("github.com/go-kit/kit/transport/grpc", "")
 
-	// TODO: magic here
-	transportGRPCGen := generator.NewTransportGRPCGenerator()
+	transportGRPCGen := generator.NewTransportGRPCGenerator(crawler)
 	transportGRPCGen.CreateServerImpleStructIfNotExists(serviceName)
 
-	transportGRPCGen.CreateField("MethodOne")
-	transportGRPCGen.CreateField("MethodTwo")
-	transportGRPCGen.CreateField("MethodThree")
-	transportGRPCGen.CreateField("SayHello")
+	_ = transportGRPCGen.CreateField(serviceName, "MethodOne")
+	_ = transportGRPCGen.CreateField(serviceName, "MethodTwo")
+	_ = transportGRPCGen.CreateField(serviceName, "MethodThree")
+	_ = transportGRPCGen.CreateField(serviceName, "SayHello")
 
-	transportGRPCGen.CreateMethodDecl("MethodOne")
-	transportGRPCGen.CreateMethodDecl("MethodTwo")
-	transportGRPCGen.CreateMethodDecl("MethodThree")
-	transportGRPCGen.CreateMethodDecl("SayHello")
+	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "MethodOne")
+	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "MethodTwo")
+	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "MethodThree")
+	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "SayHello")
 
-	transportGRPCGen.CreateServerContructorIfNotExists()
+	transportGRPCGen.CreateServerConstructorIfNotExists()
 
 	transportGRPCGen.AddFieldInitInConstrucor("MethodOne")
 	transportGRPCGen.AddFieldInitInConstrucor("MethodTwo")
@@ -255,10 +255,10 @@ func TestGRPCTransportFixer(t *testing.T) {
 		`methodThree[\s]+grpc.Handler`,
 		`sayHello[\s]+grpc.Handler`,
 
-		`func \(([\w]+) someAwesomeHubGRPCServer\) MethodOne\(ctx context.Context, req *([\w]+).MethodOneRequest\) \(*([\w]+).MethodOneResponse, error\)`,
-		`func \(([\w]+) someAwesomeHubGRPCServer\) MethodTwo\(ctx context.Context, req *([\w]+).MethodTwoRequest\) \(*([\w]+).MethodTwoResponse, error\)`,
-		`func \(([\w]+) someAwesomeHubGRPCServer\) MethodThree\(ctx context.Context, req *([\w]+).MethodThreeRequest\) \(*([\w]+).MethodThreeResponse, error\)`,
-		`func \(([\w]+) someAwesomeHubGRPCServer\) SayHello\(ctx context.Context, req *([\w]+).SayHelloRequest\) \(*([\w]+).SayHelloResponse, error\)`,
+		`func \(s someAwesomeHubGRPCServer\) MethodOne\(ctx context.Context, req \*pb.MethodOneRequest\) \(\*pb.MethodOneResponse, error\)`,
+		`func \(s someAwesomeHubGRPCServer\) MethodTwo\(ctx context.Context, req \*pb.MethodTwoRequest\) \(\*pb.MethodTwoResponse, error\)`,
+		`func \(s someAwesomeHubGRPCServer\) MethodThree\(ctx context.Context, req \*pb.MethodThreeRequest\) \(\*pb.MethodThreeResponse, error\)`,
+		`func \(s someAwesomeHubGRPCServer\) SayHello\(ctx context.Context, req \*pb.SayHelloRequest\) \(\*pb.SayHelloResponse, error\)`,
 
 		`func NewSomeAwesomeHubGRPCServer\([\w]+ context.Context, endpoint endpoint.Endpoints\) [\w]+.FakeDataProviderServer`,
 
@@ -272,7 +272,7 @@ func TestGRPCTransportFixer(t *testing.T) {
 		re := regexp.MustCompile(m)
 		match := re.FindStringSubmatch(string(result))
 		if len(match) > 0 {
-			fmt.Println(match[1])
+			fmt.Println(match[0])
 		} else {
 			t.Fatalf("Can't find any row by regex '%s'", m)
 		}

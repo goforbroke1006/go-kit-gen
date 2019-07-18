@@ -30,8 +30,6 @@ func (g EndpointsStructGenerator) CreateEndpointStructIfNotExists(serviceName st
 		},
 	}
 	g.crawler.PushBack(structDecl)
-
-	return
 }
 
 func (g EndpointsStructGenerator) CreateEndpointStructField(serviceName, actionName string) error {

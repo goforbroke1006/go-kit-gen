@@ -19,7 +19,8 @@ func (s StructCrawler) HasMethod(name string) bool {
 		if _, ok := d.(*ast.FuncDecl); !ok {
 			continue
 		}
-		if name == d.(*ast.FuncDecl).Name.Name && s.GetName() == d.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
+		fn := d.(*ast.FuncDecl)
+		if name == fn.Name.Name && s.GetName() == d.(*ast.FuncDecl).Recv.List[0].Type.(*ast.Ident).Name {
 			return true
 		}
 	}
