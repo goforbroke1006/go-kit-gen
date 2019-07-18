@@ -148,31 +148,35 @@ func fixEndpointFile(endpointFilename, serviceName string, actionNames []string)
 
 	crawler := source.NewFileCrawler(fileNode)
 	crawler.SetPackageIfNotDefined("endpoint")
+	crawler.AddImportIfNotExists("../service", "")
+	crawler.AddImportIfNotExists("github.com/go-kit/kit/endpoint", "goKitEndpoint")
 
 	structGen := generator.NewEndpointsStructGenerator(crawler)
 	structGen.CreateEndpointStructIfNotExists(serviceName)
 
 	for _, a := range actionNames {
-		structGen.CreateEndpointStructField(serviceName, a)
+		_ = structGen.CreateEndpointStructField(serviceName, a)
 	}
 
+	// create models for arguments
 	for _, a := range actionNames {
 		structGen.CreateRequestStruct(a)
+		structGen.CreateResponseStruct(a)
+	}
+
+	structGen.CreateConstructorIfNotExists(serviceName)
+	for _, a := range actionNames {
+		structGen.SetFieldInConstructor(serviceName, a)
 	}
 
 	for _, a := range actionNames {
-		structGen.CreateMakeEndpointFunc(a)
-	}
-
-	structGen.CreateConstructorIfNotExists()
-	for _, a := range actionNames {
-		structGen.SetFieldInContructor(a)
+		structGen.CreateMakeEndpointFunc(serviceName, a)
 	}
 
 	if file, err := os.OpenFile(endpointFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		log.Fatal(err.Error())
 	} else {
-		if err = printer.Fprint(file, fileSet, endpointFilename); nil != err {
+		if err = printer.Fprint(file, fileSet, fileNode); nil != err {
 			log.Fatalln(err)
 		}
 	}

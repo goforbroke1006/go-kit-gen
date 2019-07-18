@@ -2,6 +2,7 @@ package source
 
 import (
 	"go/ast"
+	"go/token"
 )
 
 func NewFileCrawler(file *ast.File) *FileCrawler {
@@ -12,6 +13,51 @@ func NewFileCrawler(file *ast.File) *FileCrawler {
 
 type FileCrawler struct {
 	file *ast.File
+}
+
+func (c FileCrawler) HasImport(packagePath string) bool {
+	for _, d := range c.file.Decls {
+		//fmt.Printf("%v", d)
+		if _, ok := d.(*ast.GenDecl); !ok {
+			continue
+		}
+		if token.IMPORT != d.(*ast.GenDecl).Tok {
+			continue
+		}
+
+		for _, spec := range d.(*ast.GenDecl).Specs {
+			if "\""+packagePath+"\"" == spec.(*ast.ImportSpec).Path.Value {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+func (c FileCrawler) AddImportIfNotExists(packagePath, alias string) {
+	if c.HasImport(packagePath) {
+		return
+	}
+
+	importDecl := &ast.GenDecl{
+		Tok: token.IMPORT,
+		Specs: []ast.Spec{
+			&ast.ImportSpec{
+				Path: &ast.BasicLit{
+					//Kind:  token.STRING,
+					Value: "\"" + packagePath + "\"",
+				},
+			},
+		},
+	}
+	if len(alias) > 0 {
+		importDecl.Specs[0].(*ast.ImportSpec).Name = ast.NewIdent(alias)
+	}
+
+	var decls []ast.Decl
+	decls = append(decls, importDecl)
+	decls = append(decls, c.file.Decls...)
+	c.file.Decls = decls
 }
 
 func (c *FileCrawler) SetPackageIfNotDefined(packageName string) {

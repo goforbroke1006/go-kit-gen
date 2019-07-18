@@ -97,9 +97,9 @@ func TestServiceFixer(t *testing.T) {
 func TestEndpointFixer(t *testing.T) {
 	endpointFilename, _ := filepath.Abs("../testdata/pkg/endpoint/endpoint.go")
 
-	if err := os.Remove(endpointFilename); nil != err {
-		t.Log(err)
-	}
+	//if err := os.Remove(endpointFilename); nil != err {
+	//	t.Log(err)
+	//}
 
 	fileSet := token.NewFileSet()
 	fileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
@@ -110,6 +110,8 @@ func TestEndpointFixer(t *testing.T) {
 
 	crawler := source.NewFileCrawler(fileNode)
 	crawler.SetPackageIfNotDefined("endpoint")
+	crawler.AddImportIfNotExists("../service", "")
+	crawler.AddImportIfNotExists("github.com/go-kit/kit/endpoint", "goKitEndpoint")
 
 	// TODO: magic here
 	eptsStructGen := generator.NewEndpointsStructGenerator(crawler)
@@ -129,16 +131,16 @@ func TestEndpointFixer(t *testing.T) {
 	eptsStructGen.CreateRequestStruct("SayHello")
 	eptsStructGen.CreateResponseStruct("SayHello")
 
-	eptsStructGen.CreateMakeEndpointFunc("MethodOne")
-	eptsStructGen.CreateMakeEndpointFunc("MethodTwo")
-	eptsStructGen.CreateMakeEndpointFunc("MethodThree")
-	eptsStructGen.CreateMakeEndpointFunc("SayHello")
+	eptsStructGen.CreateConstructorIfNotExists(serviceName)
+	eptsStructGen.SetFieldInConstructor(serviceName, "MethodOne")
+	eptsStructGen.SetFieldInConstructor(serviceName, "MethodTwo")
+	eptsStructGen.SetFieldInConstructor(serviceName, "MethodThree")
+	eptsStructGen.SetFieldInConstructor(serviceName, "SayHello")
 
-	eptsStructGen.CreateConstructorIfNotExists()
-	eptsStructGen.SetFieldInContructor("MethodOne")
-	eptsStructGen.SetFieldInContructor("MethodTwo")
-	eptsStructGen.SetFieldInContructor("MethodThree")
-	eptsStructGen.SetFieldInContructor("SayHello")
+	eptsStructGen.CreateMakeEndpointFunc(serviceName, "MethodOne")
+	eptsStructGen.CreateMakeEndpointFunc(serviceName, "MethodTwo")
+	eptsStructGen.CreateMakeEndpointFunc(serviceName, "MethodThree")
+	eptsStructGen.CreateMakeEndpointFunc(serviceName, "SayHello")
 
 	if file, err := os.OpenFile(endpointFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		t.Fatal(err.Error())
@@ -154,10 +156,10 @@ func TestEndpointFixer(t *testing.T) {
 	}
 
 	matches := []string{
-		`MethodOneEndpoint([\s]+)endpoint.Endpoint`,
-		`MethodTwoEndpoint([\s]+)endpoint.Endpoint`,
-		`MethodThreeEndpoint([\s]+)endpoint.Endpoint`,
-		`SayHelloEndpoint([\s]+)endpoint.Endpoint`,
+		`MethodOneEndpoint([\s]+)goKitEndpoint.Endpoint`,
+		`MethodTwoEndpoint([\s]+)goKitEndpoint.Endpoint`,
+		`MethodThreeEndpoint([\s]+)goKitEndpoint.Endpoint`,
+		`SayHelloEndpoint([\s]+)goKitEndpoint.Endpoint`,
 
 		`type MethodOneRequest struct`,
 		`type MethodTwoRequest struct`,
@@ -169,22 +171,24 @@ func TestEndpointFixer(t *testing.T) {
 		`type MethodThreeResponse struct`,
 		`type SayHelloResponse struct`,
 
+		`func NewSomeAwesomeHubEndpoints\(svc service.SomeAwesomeHubService\) SomeAwesomeHubEndpoints`,
+
+		`MethodOneEndpoint\:([\t\s]+)makeMethodOneEndpoint\(svc\)`,
+		`MethodTwoEndpoint\:([\t\s]+)makeMethodTwoEndpoint\(svc\)`,
+		`MethodThreeEndpoint\:([\t\s]+)makeMethodThreeEndpoint\(svc\)`,
+		`SayHelloEndpoint\:([\t\s]+)makeSayHelloEndpoint\(svc\)`,
+
 		`func makeMethodOneEndpoint\(`,
 		`func makeMethodTwoEndpoint\(`,
 		`func makeMethodThreeEndpoint\(`,
 		`func makeSayHelloEndpoint\(`,
-
-		`MethodOneEndpoint:([\s]+)makeMethodOneEndpoint\(,`,
-		`MethodTwoEndpoint:([\s]+)makeMethodTwoEndpoint\(,`,
-		`MethodThreeEndpoint:([\s]+)makeMethodThreeEndpoint\(,`,
-		`SayHelloEndpoint:([\s]+)makeSayHelloEndpoint\(,`,
 	}
 
 	for _, m := range matches {
 		re := regexp.MustCompile(m)
 		match := re.FindStringSubmatch(string(result))
 		if len(match) > 0 {
-			fmt.Println(match[1])
+			fmt.Println(match[0])
 		} else {
 			t.Fatalf("Can't find any row by regex '%s'", m)
 		}

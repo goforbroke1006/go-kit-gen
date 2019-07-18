@@ -26,6 +26,15 @@ func (s StructCrawler) HasMethod(name string) bool {
 	return false
 }
 
+func (s StructCrawler) HasProperty(name string) bool {
+	for _, field := range s.decl.Specs[0].(*ast.TypeSpec).Type.(*ast.StructType).Fields.List {
+		if name == field.Names[0].Name {
+			return true
+		}
+	}
+	return false
+}
+
 func (s StructCrawler) AddProperty(name, _type string) {
 	spec := s.decl.Specs[0].(*ast.TypeSpec)
 	f := &ast.Field{
