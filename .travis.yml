@@ -1,0 +1,19 @@
+language: go
+
+go:
+  - 1.10.x
+  - 1.11.x
+
+git:
+  depth: 1
+
+install: true
+
+before_script:
+  - go install github.com/golangci/golangci-lint/cmd/golangci-lint
+  - go get -u github.com/golang/dep/cmd/dep
+  - dep ensure -v
+
+script:
+  - golangci-lint run
+  - go test -v -race ./...
