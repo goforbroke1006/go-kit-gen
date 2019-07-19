@@ -155,7 +155,7 @@ func (g TransportGRPCGenerator) CreateMethodDecl(serviceName, pbGoPackage, actio
 func (g TransportGRPCGenerator) CreateServerConstructorIfNotExists(serviceName, pbGoPackage string) {
 	// TODO: implement me
 
-	constructorName := "New" + string_util.FirstLetterToUpperCase(serviceName) + "Server"
+	constructorName := "New" + string_util.FirstLetterToUpperCase(serviceName) + "GRPCServer"
 	if nil != g.crawler.GetFunc(constructorName) {
 		return
 	}
@@ -168,7 +168,8 @@ func (g TransportGRPCGenerator) CreateServerConstructorIfNotExists(serviceName, 
 	funcDecl.Type = &ast.FuncType{
 		Params: &ast.FieldList{
 			List: []*ast.Field{
-				util.CreateField("svc", "service."+serviceName+"Service"),
+				util.CreateField("ctx", "context.Context"),
+				util.CreateField("endpoint", "endpoint."+serviceName+"Endpoints"),
 			},
 		},
 		Results: &ast.FieldList{
@@ -197,12 +198,29 @@ func (g TransportGRPCGenerator) CreateServerConstructorIfNotExists(serviceName, 
 }
 
 func (g TransportGRPCGenerator) AddFieldInitInConstructor(serviceName, actionName string) error {
-	constructorName := "New" + string_util.FirstLetterToUpperCase(serviceName) + "Server"
-	if nil == g.crawler.GetFunc(constructorName) {
+	constructorName := "New" + string_util.FirstLetterToUpperCase(serviceName) + "GRPCServer"
+	funcDecl := g.crawler.GetFunc(constructorName)
+	if nil == funcDecl {
 		return fmt.Errorf("method '%s' does not exist", constructorName)
 	}
 
+	list := funcDecl.Body.List[len(funcDecl.Body.List)-1].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts
+
 	// TODO: implement me
+	assignment := &ast.KeyValueExpr{
+		Key: ast.NewIdent(string_util.FirstLetterToLowerCase(actionName)),
+		Value: &ast.CallExpr{
+			Fun: ast.NewIdent("grpc.NewServer"),
+			Args: []ast.Expr{
+				ast.NewIdent("endpoint." + actionName + "Endpoint"),
+				ast.NewIdent("decode" + actionName + "Request"),
+				ast.NewIdent("encode" + actionName + "Response"),
+			},
+		},
+	}
+	list = append(list, assignment)
+
+	funcDecl.Body.List[len(funcDecl.Body.List)-1].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts = list
 
 	return nil
 }

@@ -212,7 +212,7 @@ func TestGRPCTransportFixer(t *testing.T) {
 
 	crawler := source.NewFileCrawler(serviceFileNode)
 	crawler.SetPackageIfNotDefined("transport")
-	crawler.AddImportIfNotExists("../service", "")
+	crawler.AddImportIfNotExists("../endpoint", "")
 	// TODO: import pbGoPackage
 	crawler.AddImportIfNotExists("context", "")
 	crawler.AddImportIfNotExists("github.com/go-kit/kit/transport/grpc", "")
@@ -263,12 +263,22 @@ func TestGRPCTransportFixer(t *testing.T) {
 		`func \(s someAwesomeHubGRPCServer\) MethodThree\(ctx context.Context, req \*pb.MethodThreeRequest\) \(\*pb.MethodThreeResponse, error\)`,
 		`func \(s someAwesomeHubGRPCServer\) SayHello\(ctx context.Context, req \*pb.SayHelloRequest\) \(\*pb.SayHelloResponse, error\)`,
 
-		`func NewSomeAwesomeHubGRPCServer\(ctx context.Context, endpoint endpoint.Endpoints\) [\w]+.FakeDataProviderServer`,
+		`func NewSomeAwesomeHubGRPCServer\(ctx context.Context, endpoint endpoint.SomeAwesomeHubEndpoints\) pb.SomeAwesomeHubServer`,
 
 		`methodOne: grpc.NewServer\(`,
 		`methodTwo: grpc.NewServer\(`,
 		`methodThree: grpc.NewServer\(`,
 		`sayHello: grpc.NewServer\(`,
+
+		`func decodeMethodOneRequest`,
+		`func decodeMethodTwoRequest`,
+		`func decodeMethodThreeRequest`,
+		`func decodeSayHelloRequest`,
+
+		`func encodeMethodOneResponse`,
+		`func encodeMethodTwoResponse`,
+		`func encodeMethodThreeResponse`,
+		`func encodeSayHelloResponse`,
 	}
 
 	for _, m := range matches {
