@@ -22,4 +22,3 @@ go-kit-gen \
     * endpoint
     * service
     * transport
-    * model
