@@ -7,6 +7,7 @@ import (
 	"go/printer"
 	"go/token"
 	"io/ioutil"
+	"log"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -98,14 +99,14 @@ func TestServiceFixer(t *testing.T) {
 func TestEndpointFixer(t *testing.T) {
 	endpointFilename, _ := filepath.Abs("../testdata/pkg/endpoint/endpoint.go")
 
-	if err := os.Remove(endpointFilename); nil != err {
-		t.Log(err)
-	}
+	//if err := os.Remove(endpointFilename); nil != err {
+	//	t.Log(err)
+	//}
 
 	fileSet := token.NewFileSet()
 	fileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
 	if err != nil {
-		//log.Fatal(err)
+		log.Println(err)
 		fileNode = &ast.File{}
 	}
 
@@ -114,7 +115,6 @@ func TestEndpointFixer(t *testing.T) {
 	crawler.AddImportIfNotExists("../service", "")
 	crawler.AddImportIfNotExists("github.com/go-kit/kit/endpoint", "goKitEndpoint")
 
-	// TODO: magic here
 	eptsStructGen := generator.NewEndpointsStructGenerator(crawler)
 	eptsStructGen.CreateEndpointStructIfNotExists(serviceName)
 
@@ -200,13 +200,14 @@ func TestEndpointFixer(t *testing.T) {
 func TestGRPCTransportFixer(t *testing.T) {
 	transportFilename, _ := filepath.Abs("../testdata/pkg/transport/transport_grpc.go")
 
-	//if err := os.Remove(transportFilename); nil != err {
-	//	t.Log(err)
-	//}
+	if err := os.Remove(transportFilename); nil != err {
+		t.Log(err)
+	}
 
 	fileSet := token.NewFileSet()
 	serviceFileNode, err := parser.ParseFile(fileSet, transportFilename, nil, parser.ParseComments)
 	if err != nil {
+		log.Println(err)
 		serviceFileNode = &ast.File{}
 	}
 

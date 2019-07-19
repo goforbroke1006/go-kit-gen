@@ -39,14 +39,15 @@ func (c FileCrawler) AddImportIfNotExists(packagePath, alias string) {
 		return
 	}
 
+	importPath := &ast.BasicLit{
+		Kind:  token.STRING,
+		Value: "\"" + packagePath + "\"",
+	}
 	importDecl := &ast.GenDecl{
 		Tok: token.IMPORT,
 		Specs: []ast.Spec{
 			&ast.ImportSpec{
-				Path: &ast.BasicLit{
-					//Kind:  token.STRING,
-					Value: "\"" + packagePath + "\"",
-				},
+				Path: importPath,
 			},
 		},
 	}
@@ -58,6 +59,14 @@ func (c FileCrawler) AddImportIfNotExists(packagePath, alias string) {
 	decls = append(decls, importDecl)
 	decls = append(decls, c.file.Decls...)
 	c.file.Decls = decls
+
+	c.file.Imports = append(c.file.Imports, &ast.ImportSpec{
+		Path: importPath,
+	})
+}
+
+func (c *FileCrawler) GetPackage() string {
+	return c.file.Name.Name
 }
 
 func (c *FileCrawler) SetPackageIfNotDefined(packageName string) {

@@ -183,11 +183,72 @@ func (g EndpointsStructGenerator) CreateMakeEndpointFunc(serviceName, actionName
 		},
 	}
 
+	extractReqStmt := &ast.AssignStmt{
+		Lhs: []ast.Expr{ast.NewIdent("req")},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{
+			&ast.TypeAssertExpr{
+				X:    ast.NewIdent("request"),
+				Type: ast.NewIdent(actionName + "Request"),
+			},
+		},
+	}
+	callServiceMethodStmt := &ast.AssignStmt{
+		Lhs: []ast.Expr{
+			ast.NewIdent("tmpResp"),
+			ast.NewIdent("err"),
+		},
+		Tok: token.DEFINE,
+		Rhs: []ast.Expr{
+			&ast.CallExpr{
+				Fun: &ast.SelectorExpr{
+					X:   ast.NewIdent("svc"),
+					Sel: ast.NewIdent(actionName),
+				},
+				Args: []ast.Expr{
+					ast.NewIdent("ctx"),
+					ast.NewIdent("req"),
+				},
+			},
+		},
+	}
+
+	callbackFn := &ast.FuncLit{
+		Type: &ast.FuncType{
+			Params: &ast.FieldList{
+				List: []*ast.Field{
+					util.CreateField("ctx", "context.Context"),
+					util.CreateField("request", "interface{}"),
+				},
+			},
+			Results: &ast.FieldList{
+				List: []*ast.Field{
+					util.CreateField("", "interface{}"),
+					util.CreateField("", "error"),
+				},
+			},
+		},
+		Body: &ast.BlockStmt{
+			List: []ast.Stmt{
+				extractReqStmt,
+				callServiceMethodStmt,
+				&ast.ReturnStmt{
+					Results: []ast.Expr{
+						&ast.CompositeLit{
+							Type: ast.NewIdent("MethodOneResponse"),
+						},
+						ast.NewIdent("err"),
+					},
+				},
+			},
+		},
+	}
+
 	funcDecl.Body = &ast.BlockStmt{
 		List: []ast.Stmt{
 			&ast.ReturnStmt{
 				Results: []ast.Expr{
-					ast.NewIdent("nil"), // TODO: improve it
+					callbackFn,
 				},
 			},
 		},

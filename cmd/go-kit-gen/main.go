@@ -93,12 +93,18 @@ func main() {
 
 	fixServiceFile(*argServiceFile, *argServiceName, actionsNames)
 	fixEndpointFile(*argEndpointFile, *argServiceName, actionsNames)
+
+	if TransportTypeGRPC == *argTransportType {
+		fixTransportGRPCFile(protoCrawler.GetPackage(),
+			*argTransportFile, *argServiceName, actionsNames)
+	}
 }
 
 func fixServiceFile(serviceFilename, serviceName string, actionNames []string) {
 	fileSet := token.NewFileSet()
 	serviceFileNode, err := parser.ParseFile(fileSet, serviceFilename, nil, parser.ParseComments)
 	if err != nil {
+		log.Println(err)
 		serviceFileNode = &ast.File{}
 	}
 
@@ -143,7 +149,8 @@ func fixEndpointFile(endpointFilename, serviceName string, actionNames []string)
 	fileSet := token.NewFileSet()
 	fileNode, err := parser.ParseFile(fileSet, endpointFilename, nil, parser.ParseComments)
 	if nil != err {
-		log.Fatalln(err)
+		log.Println(err)
+		fileNode = &ast.File{}
 	}
 
 	crawler := source.NewFileCrawler(fileNode)
@@ -174,6 +181,51 @@ func fixEndpointFile(endpointFilename, serviceName string, actionNames []string)
 	}
 
 	if file, err := os.OpenFile(endpointFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
+		log.Fatal(err.Error())
+	} else {
+		if err = printer.Fprint(file, fileSet, fileNode); nil != err {
+			log.Fatalln(err)
+		}
+	}
+}
+
+func fixTransportGRPCFile(pbGoPackage, filename, serviceName string, actionsNames []string) {
+	fileSet := token.NewFileSet()
+	fileNode, err := parser.ParseFile(fileSet, filename, nil, parser.ParseComments)
+	if nil != err {
+		log.Println(err)
+		fileNode = &ast.File{}
+	}
+
+	crawler := source.NewFileCrawler(fileNode)
+	crawler.SetPackageIfNotDefined("transport")
+	crawler.AddImportIfNotExists("../endpoint", "")
+	crawler.AddImportIfNotExists("context", "")
+	crawler.AddImportIfNotExists("github.com/go-kit/kit/transport/grpc", "")
+
+	transportGRPCGen := generator.NewTransportGRPCGenerator(crawler)
+	transportGRPCGen.CreateServerImpleStructIfNotExists(serviceName)
+
+	for _, a := range actionsNames {
+		_ = transportGRPCGen.CreateField(serviceName, a)
+	}
+
+	for _, a := range actionsNames {
+		transportGRPCGen.CreateMethodDecl(serviceName, pbGoPackage, a)
+	}
+
+	transportGRPCGen.CreateServerConstructorIfNotExists(serviceName, pbGoPackage)
+
+	for _, a := range actionsNames {
+		_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, a)
+	}
+
+	for _, a := range actionsNames {
+		transportGRPCGen.CreateDecodeRequestMethod(pbGoPackage, a)
+		transportGRPCGen.CreateEncodeResponseMethod(pbGoPackage, a)
+	}
+
+	if file, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		log.Fatal(err.Error())
 	} else {
 		if err = printer.Fprint(file, fileSet, fileNode); nil != err {
