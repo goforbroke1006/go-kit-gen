@@ -6,6 +6,7 @@ build:
 deps:
 	go get github.com/go-kit/kit/endpoint
 	go get github.com/go-kit/kit/transport
+#	go get github.com/gogo/protobuf
 	dep ensure -v
 
 install:
@@ -13,11 +14,11 @@ install:
 
 .PHONY: test
 test:
-#	protoc \
-#		--proto_path=$(GOPATH)/src/github.com/gogo/protobuf/protobuf/ \
-#		--proto_path=. \
-#		--go_out=plugins=grpc:. \
-#		./test/testdata/some-awesome-hub.proto
+	protoc \
+		--proto_path=./vendor/github.com/golang/protobuf/ptypes/ \
+		--proto_path=. \
+		--go_out=plugins=grpc:. \
+		./test/some-awesome-hub.proto
 	go test ./...
 
 test-cover:
