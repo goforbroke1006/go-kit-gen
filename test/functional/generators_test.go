@@ -200,9 +200,9 @@ func TestEndpointFixer(t *testing.T) {
 func TestGRPCTransportFixer(t *testing.T) {
 	transportFilename, _ := filepath.Abs("../testdata/pkg/transport/transport_grpc.go")
 
-	if err := os.Remove(transportFilename); nil != err {
-		t.Log(err)
-	}
+	//if err := os.Remove(transportFilename); nil != err {
+	//	t.Log(err)
+	//}
 
 	fileSet := token.NewFileSet()
 	serviceFileNode, err := parser.ParseFile(fileSet, transportFilename, nil, parser.ParseComments)
@@ -237,6 +237,18 @@ func TestGRPCTransportFixer(t *testing.T) {
 	_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, "MethodThree")
 	_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, "SayHello")
 
+	transportGRPCGen.CreateDecodeRequestMethod(pbGoPackage, "MethodOne")
+	transportGRPCGen.CreateEncodeResponseMethod(pbGoPackage, "MethodOne")
+
+	transportGRPCGen.CreateDecodeRequestMethod(pbGoPackage, "MethodTwo")
+	transportGRPCGen.CreateEncodeResponseMethod(pbGoPackage, "MethodTwo")
+
+	transportGRPCGen.CreateDecodeRequestMethod(pbGoPackage, "MethodThree")
+	transportGRPCGen.CreateEncodeResponseMethod(pbGoPackage, "MethodThree")
+
+	transportGRPCGen.CreateDecodeRequestMethod(pbGoPackage, "SayHello")
+	transportGRPCGen.CreateEncodeResponseMethod(pbGoPackage, "SayHello")
+
 	if file, err := os.OpenFile(transportFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		t.Fatal(err.Error())
 	} else {
@@ -265,10 +277,10 @@ func TestGRPCTransportFixer(t *testing.T) {
 
 		`func NewSomeAwesomeHubGRPCServer\(ctx context.Context, endpoint endpoint.SomeAwesomeHubEndpoints\) pb.SomeAwesomeHubServer`,
 
-		`methodOne: grpc.NewServer\(`,
-		`methodTwo: grpc.NewServer\(`,
-		`methodThree: grpc.NewServer\(`,
-		`sayHello: grpc.NewServer\(`,
+		`methodOne:([\t\s]+)grpc.NewServer\(`,
+		`methodTwo:([\t\s]+)grpc.NewServer\(`,
+		`methodThree:([\t\s]+)grpc.NewServer\(`,
+		`sayHello:([\t\s]+)grpc.NewServer\(`,
 
 		`func decodeMethodOneRequest`,
 		`func decodeMethodTwoRequest`,

@@ -206,9 +206,18 @@ func (g TransportGRPCGenerator) AddFieldInitInConstructor(serviceName, actionNam
 
 	list := funcDecl.Body.List[len(funcDecl.Body.List)-1].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts
 
+	fieldName := string_util.FirstLetterToLowerCase(actionName)
+
+	for _, el := range list {
+		if fieldName == el.(*ast.KeyValueExpr).Key.(*ast.Ident).Name {
+			return nil
+		}
+	}
+
 	// TODO: implement me
+
 	assignment := &ast.KeyValueExpr{
-		Key: ast.NewIdent(string_util.FirstLetterToLowerCase(actionName)),
+		Key: ast.NewIdent(fieldName),
 		Value: &ast.CallExpr{
 			Fun: ast.NewIdent("grpc.NewServer"),
 			Args: []ast.Expr{
@@ -223,6 +232,122 @@ func (g TransportGRPCGenerator) AddFieldInitInConstructor(serviceName, actionNam
 	funcDecl.Body.List[len(funcDecl.Body.List)-1].(*ast.ReturnStmt).Results[0].(*ast.CompositeLit).Elts = list
 
 	return nil
+}
+
+func (g TransportGRPCGenerator) CreateDecodeRequestMethod(pbGoPackage, actionName string) {
+	funcName := "decode" + string_util.FirstLetterToUpperCase(actionName) + "Request"
+	funcDecl := g.crawler.GetFunc(funcName)
+	if nil != funcDecl {
+		return
+	}
+
+	funcDecl = &ast.FuncDecl{}
+	funcDecl.Name = ast.NewIdent(funcName)
+	funcDecl.Type = &ast.FuncType{
+		Params: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("ctx", "context.Context"),
+				util.CreateField("r", "interface{}"),
+			},
+		},
+		Results: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("", "interface{}"),
+				util.CreateField("", "error"),
+			},
+		},
+	}
+
+	funcDecl.Body = &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{
+					ast.NewIdent("req"),
+				},
+				Rhs: []ast.Expr{
+					&ast.TypeAssertExpr{
+						X: ast.NewIdent("r"),
+						Type: &ast.StarExpr{
+							X: &ast.SelectorExpr{
+								X:   ast.NewIdent(pbGoPackage),
+								Sel: ast.NewIdent(actionName + "Request"),
+							},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.CompositeLit{
+						Type: util.StringToAstType("endpoint." + actionName + "Request"),
+						Elts: []ast.Expr{},
+					},
+					ast.NewIdent("nil"),
+				},
+			},
+		},
+	}
+
+	g.crawler.PushBack(funcDecl)
+}
+
+func (g TransportGRPCGenerator) CreateEncodeResponseMethod(pbGoPackage, actionName string) {
+	funcName := "encode" + string_util.FirstLetterToUpperCase(actionName) + "Response"
+	funcDecl := g.crawler.GetFunc(funcName)
+	if nil != funcDecl {
+		return
+	}
+
+	funcDecl = &ast.FuncDecl{}
+	funcDecl.Name = ast.NewIdent(funcName)
+	funcDecl.Type = &ast.FuncType{
+		Params: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("ctx", "context.Context"),
+				util.CreateField("r", "interface{}"),
+			},
+		},
+		Results: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("", "interface{}"),
+				util.CreateField("", "error"),
+			},
+		},
+	}
+
+	funcDecl.Body = &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.AssignStmt{
+				Tok: token.DEFINE,
+				Lhs: []ast.Expr{
+					ast.NewIdent("resp"),
+				},
+				Rhs: []ast.Expr{
+					&ast.TypeAssertExpr{
+						X: ast.NewIdent("r"),
+						Type: &ast.StarExpr{
+							X: &ast.SelectorExpr{
+								X:   ast.NewIdent("endpoint"),
+								Sel: ast.NewIdent(actionName + "Response"),
+							},
+						},
+					},
+				},
+			},
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.CompositeLit{
+						Type: util.StringToAstType(pbGoPackage + "." + actionName + "Response"),
+						Elts: []ast.Expr{},
+					},
+					ast.NewIdent("nil"),
+				},
+			},
+		},
+	}
+
+	g.crawler.PushBack(funcDecl)
 }
 
 func NewTransportGRPCGenerator(crawler *source.FileCrawler) *TransportGRPCGenerator {
