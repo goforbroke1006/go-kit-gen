@@ -17,6 +17,7 @@ import (
 )
 
 const serviceName = "SomeAwesomeHub"
+const pbGoPackage = "pb"
 
 func TestServiceFixer(t *testing.T) {
 	serviceFilename, _ := filepath.Abs("../testdata/pkg/service/service.go")
@@ -199,9 +200,9 @@ func TestEndpointFixer(t *testing.T) {
 func TestGRPCTransportFixer(t *testing.T) {
 	transportFilename, _ := filepath.Abs("../testdata/pkg/transport/transport_grpc.go")
 
-	//if err := os.Remove(transportFilename); nil != err {
-	//	t.Log(err)
-	//}
+	if err := os.Remove(transportFilename); nil != err {
+		t.Log(err)
+	}
 
 	fileSet := token.NewFileSet()
 	serviceFileNode, err := parser.ParseFile(fileSet, transportFilename, nil, parser.ParseComments)
@@ -211,6 +212,8 @@ func TestGRPCTransportFixer(t *testing.T) {
 
 	crawler := source.NewFileCrawler(serviceFileNode)
 	crawler.SetPackageIfNotDefined("transport")
+	crawler.AddImportIfNotExists("../service", "")
+	// TODO: import pbGoPackage
 	crawler.AddImportIfNotExists("context", "")
 	crawler.AddImportIfNotExists("github.com/go-kit/kit/transport/grpc", "")
 
@@ -222,17 +225,17 @@ func TestGRPCTransportFixer(t *testing.T) {
 	_ = transportGRPCGen.CreateField(serviceName, "MethodThree")
 	_ = transportGRPCGen.CreateField(serviceName, "SayHello")
 
-	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "MethodOne")
-	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "MethodTwo")
-	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "MethodThree")
-	transportGRPCGen.CreateMethodDecl(serviceName, "pb", "SayHello")
+	transportGRPCGen.CreateMethodDecl(serviceName, pbGoPackage, "MethodOne")
+	transportGRPCGen.CreateMethodDecl(serviceName, pbGoPackage, "MethodTwo")
+	transportGRPCGen.CreateMethodDecl(serviceName, pbGoPackage, "MethodThree")
+	transportGRPCGen.CreateMethodDecl(serviceName, pbGoPackage, "SayHello")
 
-	transportGRPCGen.CreateServerConstructorIfNotExists()
+	transportGRPCGen.CreateServerConstructorIfNotExists(serviceName, pbGoPackage)
 
-	transportGRPCGen.AddFieldInitInConstrucor("MethodOne")
-	transportGRPCGen.AddFieldInitInConstrucor("MethodTwo")
-	transportGRPCGen.AddFieldInitInConstrucor("MethodThree")
-	transportGRPCGen.AddFieldInitInConstrucor("SayHello")
+	_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, "MethodOne")
+	_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, "MethodTwo")
+	_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, "MethodThree")
+	_ = transportGRPCGen.AddFieldInitInConstructor(serviceName, "SayHello")
 
 	if file, err := os.OpenFile(transportFilename, os.O_RDWR|os.O_CREATE, 0666); nil != err {
 		t.Fatal(err.Error())
@@ -260,7 +263,7 @@ func TestGRPCTransportFixer(t *testing.T) {
 		`func \(s someAwesomeHubGRPCServer\) MethodThree\(ctx context.Context, req \*pb.MethodThreeRequest\) \(\*pb.MethodThreeResponse, error\)`,
 		`func \(s someAwesomeHubGRPCServer\) SayHello\(ctx context.Context, req \*pb.SayHelloRequest\) \(\*pb.SayHelloResponse, error\)`,
 
-		`func NewSomeAwesomeHubGRPCServer\([\w]+ context.Context, endpoint endpoint.Endpoints\) [\w]+.FakeDataProviderServer`,
+		`func NewSomeAwesomeHubGRPCServer\(ctx context.Context, endpoint endpoint.Endpoints\) [\w]+.FakeDataProviderServer`,
 
 		`methodOne: grpc.NewServer\(`,
 		`methodTwo: grpc.NewServer\(`,

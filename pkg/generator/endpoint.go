@@ -97,10 +97,10 @@ func (g EndpointsStructGenerator) CreateConstructorIfNotExists(serviceName strin
 		return
 	}
 
+	structName := string_util.FirstLetterToUpperCase(serviceName) + "Endpoints"
+
 	funcDecl := &ast.FuncDecl{}
 	funcDecl.Name = ast.NewIdent(constructorName)
-
-	structName := string_util.FirstLetterToUpperCase(serviceName) + "Endpoints"
 	funcDecl.Type = &ast.FuncType{
 		Params: &ast.FieldList{
 			List: []*ast.Field{

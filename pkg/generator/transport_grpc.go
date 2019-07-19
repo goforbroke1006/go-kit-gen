@@ -152,12 +152,59 @@ func (g TransportGRPCGenerator) CreateMethodDecl(serviceName, pbGoPackage, actio
 	g.crawler.PushBack(funcDecl)
 }
 
-func (g TransportGRPCGenerator) CreateServerConstructorIfNotExists() {
+func (g TransportGRPCGenerator) CreateServerConstructorIfNotExists(serviceName, pbGoPackage string) {
 	// TODO: implement me
+
+	constructorName := "New" + string_util.FirstLetterToUpperCase(serviceName) + "Server"
+	if nil != g.crawler.GetFunc(constructorName) {
+		return
+	}
+
+	srvInterfaceName := string_util.FirstLetterToUpperCase(serviceName) + "Server"
+	structName := string_util.FirstLetterToLowerCase(serviceName) + "GRPCServer"
+
+	funcDecl := &ast.FuncDecl{}
+	funcDecl.Name = ast.NewIdent(constructorName)
+	funcDecl.Type = &ast.FuncType{
+		Params: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("svc", "service."+serviceName+"Service"),
+			},
+		},
+		Results: &ast.FieldList{
+			List: []*ast.Field{
+				util.CreateField("", pbGoPackage+"."+srvInterfaceName),
+			},
+		},
+	}
+
+	funcDecl.Body = &ast.BlockStmt{
+		List: []ast.Stmt{
+			&ast.ReturnStmt{
+				Results: []ast.Expr{
+					&ast.CompositeLit{
+						Type: util.StringToAstType(structName),
+						Elts: []ast.Expr{
+							// TODO: improve it
+						},
+					},
+				},
+			},
+		},
+	}
+
+	g.crawler.PushBack(funcDecl)
 }
 
-func (g TransportGRPCGenerator) AddFieldInitInConstrucor(actionName string) {
+func (g TransportGRPCGenerator) AddFieldInitInConstructor(serviceName, actionName string) error {
+	constructorName := "New" + string_util.FirstLetterToUpperCase(serviceName) + "Server"
+	if nil == g.crawler.GetFunc(constructorName) {
+		return fmt.Errorf("method '%s' does not exist", constructorName)
+	}
+
 	// TODO: implement me
+
+	return nil
 }
 
 func NewTransportGRPCGenerator(crawler *source.FileCrawler) *TransportGRPCGenerator {
