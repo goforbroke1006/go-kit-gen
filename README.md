@@ -1,5 +1,7 @@
 # go-kit-gen
 
+[![Build Status](https://travis-ci.org/goforbroke1006/go-kit-gen.svg?branch=master)](https://travis-ci.org/goforbroke1006/go-kit-gen)
+
 Tool for generating gokit-based microservice project structure with proto-3 file.
 
 **The project is not finished yet!**
